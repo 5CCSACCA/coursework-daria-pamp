@@ -41,7 +41,7 @@ Prerequisites:
 * Git (for cloning)
 
 Local Deployment Instructions:
-```bash
+bash
 1. Clone this repository
 git clone [https://github.com/5CCSACCA/coursework-daria-pamp.git]
 cd coursework-daria-pamp

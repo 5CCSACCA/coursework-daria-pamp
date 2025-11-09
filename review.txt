@@ -1,1 +1,7 @@
 These are the extra review notes apart from the code.
+Gitflow: the project uses gitflow correctly, although it mainly focuses on feature branches. I miss the use of release branches for better version management, and hotfix branches for urgent bug fixes in production.
+Compose: the compose file is empty.
+Bitnet: the whole folder has empty files.
+API: the whole folder has empty files.
+Yolo: the whole folder has empty files.
+Please start developing your project.

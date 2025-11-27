@@ -1,0 +1,9 @@
+version: '3.8'
+
+services:
+  yolo-service:
+    build: ./yolo-service
+    ports:
+      - "8001:8000"
+    volumes:
+      - ./yolo-service/app:/code/app

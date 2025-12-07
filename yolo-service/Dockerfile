@@ -1,3 +1,4 @@
+
 FROM python:3.10-slim
 
 # ---- System deps ----
@@ -14,7 +15,8 @@ RUN pip install --no-cache-dir \
     fastapi \
     uvicorn[standard] \
     pillow \
-    ultralytics
+    ultralytics \
+    python-multipart
 
 # Install CPU-only PyTorch separately
 RUN pip install --no-cache-dir torch --index-url https://download.pytorch.org/whl/cpu

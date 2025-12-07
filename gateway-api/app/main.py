@@ -70,7 +70,9 @@ async def process_art(file: UploadFile = File(...)):
     return {
         "id": doc_ref.id,
         "status": "Saved to Cloud",
-        "data": doc_data
+        "filename": file.filename,
+        "objects": detections,
+        "interpretation": description
     }
 
 @app.get("/history")
@@ -88,3 +90,4 @@ def get_history():
             data['timestamp'] = str(data['timestamp'])
         history.append(data)
     return history
+

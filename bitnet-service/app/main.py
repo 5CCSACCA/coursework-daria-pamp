@@ -7,7 +7,6 @@ import logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("BitNetService")
 
-# Initialize API
 app = FastAPI(title="Text Generation Service (LLM)")
 
 # Global model variable

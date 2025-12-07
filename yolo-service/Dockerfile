@@ -1,14 +1,29 @@
 FROM python:3.10-slim
 
-WORKDIR /code
+# ---- System deps ----
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    build-essential \
+    libgl1 \
+    libglib2.0-0 \
+    && rm -rf /var/lib/apt/lists/*
 
-#install system dependencies required by OpenCV(used by Ultralytics)
-#libgl1 & libglib2.0-0 are missing in 'slim' images but needed for image processing
-RUN apt-get update && apt-get install -y libgl1 libglib2.0-0
-# --- FIX END ---
+WORKDIR /app
 
-RUN pip install fastapi uvicorn python-multipart pillow ultralytics
+# ---- Python deps ----
+RUN pip install --no-cache-dir \
+    fastapi \
+    uvicorn[standard] \
+    pillow \
+    ultralytics \
+    torch --index-url https://download.pytorch.org/whl/cpu
 
-COPY ./app /code/app
+# ---- Copy service code ----
+COPY app /app/app
 
+ENV PYTHONUNBUFFERED=1
+
+# ---- Expose port ----
+EXPOSE 8000
+
+# ---- Run YOLO service ----
 CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]

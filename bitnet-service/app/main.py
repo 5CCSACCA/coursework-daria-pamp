@@ -2,98 +2,135 @@ from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 from transformers import pipeline
 import logging
+import re
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("BitNetService")
 
 app = FastAPI(title="Text Generation Service (LLM)")
 
+# ---------------------------------------------------
+# Load model at startup
+# ---------------------------------------------------
 generator = None
-
-class TextRequest(BaseModel):
-    detected_objects: list[str]
-    style: str = "creative"
 
 @app.on_event("startup")
 def load_model():
     global generator
-    logger.info("Loading LLM model...")
+    logger.info("Loading GPT-2 model (BitNet proxy)...")
     try:
-        # GPT-2 Small is a proxy for BitNet
-        generator = pipeline("text-generation", model="gpt2")
-        logger.info("Model loaded successfully!")
+        generator = pipeline(
+            "text-generation",
+            model="gpt2"
+        )
+        logger.info("LLM loaded successfully.")
     except Exception as e:
-        logger.error(f"Failed to load model: {e}")
+        logger.error(f"Failed to load LLM: {e}")
+        raise RuntimeError("LLM could not be loaded.")
+
+
+# ---------------------------------------------------
+# Models
+# ---------------------------------------------------
+class TextRequest(BaseModel):
+    detected_objects: list[str]
+    style: str = "creative"
+
+
+# ---------------------------------------------------
+# HEALTH CHECK
+# ---------------------------------------------------
+@app.get("/health")
+def health():
+    return {"status": "ok"}
+
 
 @app.get("/")
 def status_check():
     return {"status": "LLM Service is running", "model": "gpt2"}
 
+
+# ---------------------------------------------------
+# MAIN GENERATION ENDPOINT
+# ---------------------------------------------------
 @app.post("/generate")
 def generate_text(request: TextRequest):
+
     if not generator:
         raise HTTPException(status_code=503, detail="Model is loading")
 
-    # --- Security: Limit input size to avoid prompt abuse ---
+    # --- Security: Limit input size (Stage 11) ---
     if len(request.detected_objects) > 30:
         raise HTTPException(
             status_code=400,
-            detail="Too many detected objects in prompt (max 30)"
+            detail="Too many detected objects in prompt (max 30)."
         )
 
-    # --- 1. Smart Prompt Logic ---
-    # Check if we actually have objects
-    if request.detected_objects and len(request.detected_objects) > 0:
-        # Clean up list (remove duplicates)
-        unique_objects = list(set(request.detected_objects))
-        objects_str = ", ".join(unique_objects)
+    # --- Deduplicate detected objects ---
+    unique_objects = list(set(request.detected_objects))
+
+    # ---------------------------------------------------
+    # Prompt Construction (Smart Logic)
+    # ---------------------------------------------------
+    if unique_objects:
+        # truncate long words (safety)
+        short_objects = [o[:20] for o in unique_objects]
+        objects_str = ", ".join(short_objects)
         prompt = f"I saw a painting containing {objects_str}. It makes me feel"
     else:
-        # Fallback for empty detections (Mona Lisa, Abstract, or failed detection)
         prompt = "I saw a mysterious and beautiful masterpiece painting. It makes me feel"
-        
-# --- Optional: Apply style modifiers ---
-    if request.style == "formal":
-        prompt = "Describe the artwork in a formal academic tone. " + prompt
-    elif request.style == "poetic":
-        prompt = "Create a poetic and emotional description. " + prompt
-    elif request.style == "simple":
-        prompt = "Write in simple and clear language. " + prompt
 
-    
-    logger.info(f"Generating for prompt: {prompt}")
+    # ---------------------------------------------------
+    # Style modifiers
+    # ---------------------------------------------------
+    style = request.style.lower()
 
+    style_map = {
+        "formal": "Describe the artwork in a formal academic tone. ",
+        "poetic": "Write a poetic and emotional reflection. ",
+        "simple": "Describe it using simple and clear language. ",
+        "creative": "Express the emotion creatively. "
+    }
+
+    if style not in style_map:
+        style = "creative"
+
+    prompt = style_map[style] + prompt
+
+    logger.info(f"Prompt sent to model: {prompt}")
+
+    # ---------------------------------------------------
+    # Model Generation
+    # ---------------------------------------------------
     try:
-        # --- 2. Generation with Anti-Repetition ---
         result = generator(
-            prompt, 
-            max_length=80, 
+            prompt,
+            max_length=90,
             num_return_sequences=1,
             truncation=True,
+            temperature=0.8,
             pad_token_id=50256,
-            temperature=0.8,         # Creativity
-            no_repeat_ngram_size=2,  # FIX: Stops "in a different place" loops
-            repetition_penalty=1.2   # FIX: Penalizes repeating words
+            no_repeat_ngram_size=2,
+            repetition_penalty=1.15
         )
-        
-        full_text = result[0]['generated_text']
-        
-        # Simple cleanup to stop at the last dot
+        full_text = result[0]["generated_text"]
+
+        # ---------------------------------------------------
+        # Cleanup: cut after the last full stop
+        # ---------------------------------------------------
         if "." in full_text:
-            cleaned_text = full_text.rsplit('.', 1)[0] + "."
+            cleaned = full_text.rsplit(".", 1)[0] + "."
         else:
-            cleaned_text = full_text
+            cleaned = full_text
+
+        # Remove undesirable content (simple safety)
+        cleaned = re.sub(r"(terror|kill|violence|war)", "art", cleaned, flags=re.IGNORECASE)
 
         return {
-            "input_objects": request.detected_objects,
-            "generated_description": cleaned_text
+            "input_objects": unique_objects,
+            "generated_description": cleaned.strip()
         }
+
     except Exception as e:
-        logger.error(f"Generation error: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
-
-
-
-
-
-
+        logger.error(f"LLM generation error: {e}")
+        raise HTTPException(status_code=500, detail=f"Generation error: {e}")

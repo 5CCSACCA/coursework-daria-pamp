@@ -36,20 +36,31 @@ def generate_text(request: TextRequest):
     if not generator:
         raise HTTPException(status_code=503, detail="Model is loading")
 
-    objects_list = ", ".join(request.detected_objects)
-    prompt = f"I saw a painting with {objects_list}. It made me feel"
+    # --- IMPROVED PROMPT LOGIC ---
+    if request.detected_objects:
+        # If objects found (e.g., cat, sun)
+        objects_list = ", ".join(request.detected_objects)
+        prompt = f"I saw a painting with {objects_list}. It made me feel"
+    else:
+        # If NO objects found (Abstract art or Portrait like Mona Lisa)
+        prompt = "I saw a mysterious and beautiful masterpiece painting. It made me feel"
     
     try:
         result = generator(
             prompt, 
-            max_length=60, 
+            max_length=100, # Let it write a bit more
             num_return_sequences=1,
             truncation=True,
-            pad_token_id=50256
+            pad_token_id=50256,
+            temperature=0.8 # More creativity
         )
+        
+        # Clean up the output to remove the prompt itself
+        full_text = result[0]['generated_text']
+        # We try to keep only the new part or return the whole thing
         return {
             "input_objects": request.detected_objects,
-            "generated_description": result[0]['generated_text']
+            "generated_description": full_text
         }
     except Exception as e:
         return {"error": str(e)}

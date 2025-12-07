@@ -14,16 +14,16 @@ RUN pip install --no-cache-dir \
     fastapi \
     uvicorn[standard] \
     pillow \
-    ultralytics \
-    torch --index-url https://download.pytorch.org/whl/cpu
+    ultralytics
+
+# Install CPU-only PyTorch separately
+RUN pip install --no-cache-dir torch --index-url https://download.pytorch.org/whl/cpu
 
 # ---- Copy service code ----
 COPY app /app/app
 
 ENV PYTHONUNBUFFERED=1
 
-# ---- Expose port ----
 EXPOSE 8000
 
-# ---- Run YOLO service ----
 CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]

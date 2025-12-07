@@ -1,108 +1,103 @@
-from fastapi import FastAPI, UploadFile, File, HTTPException, Depends
-from sqlalchemy import create_engine, Column, Integer, String, Text
-from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import sessionmaker, Session
-import requests
-import io
+from fastapi import FastAPI, UploadFile, File, Depends, HTTPException, status
+from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
+from fastapi.middleware.cors import CORSMiddleware
+from prometheus_fastapi_instrumentator import Instrumentator
+import firebase_admin
+from firebase_admin import credentials, firestore, auth
+import pika
+import json
+import base64
+import os
 
-# --- 1. Database Setup (SQLite) ---
-# We use SQLite for Stage 4 persistence requirement. It's a file-based DB.
-DATABASE_URL = "sqlite:///./artify.db"
-engine = create_engine(DATABASE_URL, connect_args={"check_same_thread": False})
-SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
-Base = declarative_base()
+# --- Setup Firebase ---
+if not firebase_admin._apps:
+    cred = credentials.Certificate("serviceAccountKey.json")
+    firebase_admin.initialize_app(cred)
+db = firestore.client()
 
-# Define our Database Table
-class ArtRequest(Base):
-    __tablename__ = "requests"
-    id = Column(Integer, primary_key=True, index=True)
-    filename = Column(String)
-    detected_objects = Column(String) # Stored as comma-separated string
-    art_description = Column(Text)
+app = FastAPI(title="ArtiFy Async Gateway (Secured)")
 
-# Create the table
-Base.metadata.create_all(bind=engine)
+# --- SECURITY (CORS) ---
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
-# Dependency to get DB session
-def get_db():
-    db = SessionLocal()
+# --- MONITORING ---
+Instrumentator().instrument(app).expose(app)
+
+# --- AUTHENTICATION LOGIC (STAGE 7) ---
+security = HTTPBearer()
+
+def get_current_user(creds: HTTPAuthorizationCredentials = Depends(security)):
+    """
+    Validates the Firebase Token sent in the Authorization header.
+    Format: 'Authorization: Bearer <token>'
+    """
+    token = creds.credentials
     try:
-        yield db
-    finally:
-        db.close()
+        # Verify the token with Firebase Admin
+        decoded_token = auth.verify_id_token(token)
+        uid = decoded_token['uid']
+        return uid
+    except Exception as e:
+        print(f"Auth Error: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid authentication credentials",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
 
-# --- 2. API Setup ---
-app = FastAPI(title="ArtiFy Gateway API")
-
-# URLs of our other internal services (container names from docker-compose)
-YOLO_SERVICE_URL = "http://yolo-service:8000/detect"
-BITNET_SERVICE_URL = "http://bitnet-service:8001/generate"
-
-@app.get("/")
-def root():
-    return {"status": "Gateway is online", "db": "SQLite"}
+# --- ENDPOINTS ---
 
 @app.post("/process-art")
-async def process_art(file: UploadFile = File(...), db: Session = Depends(get_db)):
+async def process_art(
+    file: UploadFile = File(...), 
+    user_id: str = Depends(get_current_user) # <--- THIS PROTECTS THE ENDPOINT
+):
     """
-    Main Orchestrator:
-    1. Sends image to YOLO -> gets objects
-    2. Sends objects to BitNet -> gets text
-    3. Saves everything to DB
-    4. Returns final result
+    Secured Endpoint. Only works if a valid Firebase Token is provided.
     """
-    # Read file once
+    print(f"User {user_id} requested processing.")
+
+    # 1. Create DB entry (with User ID!)
+    doc_ref = db.collection('art_requests').document()
+    doc_ref.set({
+        "user_id": user_id, # We now know WHO sent the request
+        "filename": file.filename,
+        "status": "pending",
+        "timestamp": firestore.SERVER_TIMESTAMP
+    })
+    request_id = doc_ref.id
+
+    # 2. RabbitMQ
     file_content = await file.read()
-    
-    # Step 1: Call YOLO Service
+    image_b64 = base64.b64encode(file_content).decode('utf-8')
+    message = {"id": request_id, "filename": file.filename, "image_b64": image_b64}
+
     try:
-        # We need to send the file as multipart/form-data
-        files = {'file': (file.filename, file_content, file.content_type)}
-        yolo_response = requests.post(YOLO_SERVICE_URL, files=files)
-        yolo_data = yolo_response.json()
-        
-        # Extract objects (e.g., ["cat", "dog"])
-        detections = [d['object'] for d in yolo_data.get('detections', [])]
-        
+        connection = pika.BlockingConnection(pika.ConnectionParameters(host='rabbitmq'))
+        channel = connection.channel()
+        channel.queue_declare(queue='task_queue', durable=True)
+        channel.basic_publish(
+            exchange='',
+            routing_key='task_queue',
+            body=json.dumps(message),
+            properties=pika.BasicProperties(delivery_mode=2))
+        connection.close()
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"YOLO Service failed: {e}")
+        return {"error": f"RabbitMQ Error: {str(e)}"}
 
-    # Step 2: Call BitNet Service
-    try:
-        # Prepare data for BitNet
-        payload = {
-            "detected_objects": detections,
-            "style": "poetic"
-        }
-        bitnet_response = requests.post(BITNET_SERVICE_URL, json=payload)
-        bitnet_data = bitnet_response.json()
-        
-        description = bitnet_data.get('generated_description', "No description generated.")
-        
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"BitNet Service failed: {e}")
-
-    # Step 3: Save to Database
-    db_record = ArtRequest(
-        filename=file.filename,
-        detected_objects=",".join(detections),
-        art_description=description
-    )
-    db.add(db_record)
-    db.commit()
-    db.refresh(db_record)
-
-    # Step 4: Return Result
-    return {
-        "id": db_record.id,
-        "filename": db_record.filename,
-        "objects": detections,
-        "interpretation": description
-    }
+    return {"id": request_id, "status": "queued", "message": "Authenticated & Processing."}
 
 @app.get("/history")
-def get_history(db: Session = Depends(get_db)):
+def get_history(user_id: str = Depends(get_current_user)): # <--- PROTECTED TOO
     """
-    Stage 4 Requirement: Endpoint to retrieve past interactions.
+    Returns history ONLY for the logged-in user.
     """
-    return db.query(ArtRequest).all()
+    # Filter query by user_id
+    docs = db.collection('art_requests').where("user_id", "==", user_id).stream()
+    return [{"id": d.id, **d.to_dict(), "timestamp": str(d.to_dict().get("timestamp"))} for d in docs]

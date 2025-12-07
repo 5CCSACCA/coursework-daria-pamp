@@ -27,25 +27,25 @@ services:
   # 2. Gateway API (Entrypoint)
   # ------------------------------------------------------
   gateway-api:
-    build: ./gateway-api
-    restart: always
-    ports:
-      - "8080:8080"
-    volumes:
-      - ./gateway-api/app:/app/app
-      - ./gateway-api/serviceAccountKey.json:/app/serviceAccountKey.json
-    depends_on:
-      rabbitmq:
-        condition: service_healthy
-      - yolo-service
-      - bitnet-service
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-    networks:
-      - app-network
+   build: ./gateway-api
+   restart: always
+   ports:
+    - "8080:8080"
+   volumes:
+     - ./gateway-api/app:/app/app
+     - ./gateway-api/serviceAccountKey.json:/app/serviceAccountKey.json
+   depends_on:
+     - rabbitmq
+     - yolo-service
+     - bitnet-service
+   healthcheck:
+     test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+     interval: 10s
+     timeout: 5s
+     retries: 5
+   networks:
+     - app-network
+
 
   # ------------------------------------------------------
   # 3. Worker Service (Consumes queue)

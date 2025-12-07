@@ -34,6 +34,13 @@ def generate_text(request: TextRequest):
     if not generator:
         raise HTTPException(status_code=503, detail="Model is loading")
 
+    # --- Security: Limit input size to avoid prompt abuse ---
+    if len(request.detected_objects) > 30:
+        raise HTTPException(
+            status_code=400,
+            detail="Too many detected objects in prompt (max 30)"
+        )
+
     # --- 1. Smart Prompt Logic ---
     # Check if we actually have objects
     if request.detected_objects and len(request.detected_objects) > 0:
@@ -75,6 +82,7 @@ def generate_text(request: TextRequest):
     except Exception as e:
         logger.error(f"Generation error: {e}")
         raise HTTPException(status_code=500, detail=str(e))
+
 
 
 

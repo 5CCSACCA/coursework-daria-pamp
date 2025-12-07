@@ -9,6 +9,7 @@ services:
       - "8080:8080"
     volumes:
       - ./gateway-api/app:/app/app
+      - ./gateway-api/serviceAccountKey.json:/app/serviceAccountKey.json
     depends_on:
       - yolo-service
       - bitnet-service

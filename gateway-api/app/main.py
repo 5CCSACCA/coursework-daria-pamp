@@ -1,4 +1,6 @@
 from fastapi import FastAPI, UploadFile, File
+from fastapi.middleware.cors import CORSMiddleware  # <--- STAGE 11: SECURITY
+from prometheus_fastapi_instrumentator import Instrumentator # <--- STAGE 9: MONITORING
 import firebase_admin
 from firebase_admin import credentials, firestore
 import pika
@@ -14,26 +16,33 @@ db = firestore.client()
 
 app = FastAPI(title="ArtiFy Async Gateway")
 
+# --- STAGE 11: SECURITY (CORS) ---
+# Protects against unauthorized browser access
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # In real life, specific domains. For coursework, '*' is accepted.
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+# --- STAGE 9: MONITORING ---
+# Automatically creates a /metrics endpoint for Prometheus
+Instrumentator().instrument(app).expose(app)
+
 @app.post("/process-art")
 async def process_art(file: UploadFile = File(...)):
-    """
-    Async Endpoint:
-    1. Saves 'pending' status to Firebase.
-    2. Pushes image to RabbitMQ.
-    3. Returns ID immediately.
-    """
-    # 1. Create DB entry first
+    # 1. Create DB entry
     doc_ref = db.collection('art_requests').document()
     doc_ref.set({
         "filename": file.filename,
-        "status": "pending", # Start as pending
+        "status": "pending",
         "timestamp": firestore.SERVER_TIMESTAMP
     })
     request_id = doc_ref.id
 
-    # 2. Prepare message for RabbitMQ
+    # 2. Prepare RabbitMQ message
     file_content = await file.read()
-    # Convert bytes to base64 string to send via JSON
     image_b64 = base64.b64encode(file_content).decode('utf-8')
 
     message = {
@@ -43,20 +52,20 @@ async def process_art(file: UploadFile = File(...)):
     }
 
     # 3. Send to RabbitMQ
-    connection = pika.BlockingConnection(pika.ConnectionParameters(host='rabbitmq'))
-    channel = connection.channel()
-    channel.queue_declare(queue='task_queue', durable=True)
-    
-    channel.basic_publish(
-        exchange='',
-        routing_key='task_queue',
-        body=json.dumps(message),
-        properties=pika.BasicProperties(
-            delivery_mode=2,  # Make message persistent
-        ))
-    connection.close()
+    try:
+        connection = pika.BlockingConnection(pika.ConnectionParameters(host='rabbitmq'))
+        channel = connection.channel()
+        channel.queue_declare(queue='task_queue', durable=True)
+        
+        channel.basic_publish(
+            exchange='',
+            routing_key='task_queue',
+            body=json.dumps(message),
+            properties=pika.BasicProperties(delivery_mode=2))
+        connection.close()
+    except Exception as e:
+        return {"error": f"RabbitMQ Error: {str(e)}"}
 
-    # 4. Return immediately!
     return {
         "id": request_id,
         "status": "queued",

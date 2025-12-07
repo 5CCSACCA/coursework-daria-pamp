@@ -1,8 +1,20 @@
 version: '3.8'
 
 services:
-  # 1. Main Gateway API (Port 8080)
-  # Users talk to THIS service.
+  # 1. RabbitMQ (The Message Broker)
+  rabbitmq:
+    image: "rabbitmq:3-management"
+    container_name: rabbitmq
+    ports:
+      - "5672:5672"   # Communication port
+      - "15672:15672" # Dashboard port (Login: guest/guest)
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # 2. Gateway API (Producer)
   gateway-api:
     build: ./gateway-api
     ports:
@@ -10,22 +22,33 @@ services:
     volumes:
       - ./gateway-api/app:/app/app
     depends_on:
+      rabbitmq:
+        condition: service_healthy
+
+  # 3. Worker Service (Consumer) - NEW!
+  # This service does the hard work in the background
+  worker-service:
+    build: ./worker-service
+    volumes:
+      - ./worker-service/app:/app/app
+      # Needs the key to save to Firebase!
+      - ./gateway-api/serviceAccountKey.json:/app/serviceAccountKey.json
+    depends_on:
+      - rabbitmq
       - yolo-service
       - bitnet-service
 
-  # 2. YOLO Service (Internal Port 8000)
+  # 4. YOLO Service
   yolo-service:
     build: ./yolo-service
-    container_name: yolo_container
     ports:
       - "8000:8000"
     volumes:
       - ./yolo-service/app:/app/app
 
-  # 3. BitNet Service (Internal Port 8001)
+  # 5. BitNet Service
   bitnet-service:
     build: ./bitnet-service
-    container_name: llm_container
     ports:
       - "8001:8001"
     volumes:

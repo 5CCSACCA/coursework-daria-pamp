@@ -16,17 +16,16 @@ RUN pip install --no-cache-dir \
     uvicorn[standard] \
     pillow \
     transformers==4.36.2 \
-    torch --index-url https://download.pytorch.org/whl/cpu \
     python-multipart
+
+# Install CPU-only PyTorch
+RUN pip install --no-cache-dir torch --index-url https://download.pytorch.org/whl/cpu
 
 # Copy service code
 COPY ./app /app/app
 
-# Prevent stdout buffering (useful for logs)
 ENV PYTHONUNBUFFERED=1
 
-# Expose internal port
 EXPOSE 8001
 
-# Start LLM service
 CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8001"]

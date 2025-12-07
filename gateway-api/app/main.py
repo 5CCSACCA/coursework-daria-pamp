@@ -1,108 +1,90 @@
-from fastapi import FastAPI, UploadFile, File, HTTPException, Depends
-from sqlalchemy import create_engine, Column, Integer, String, Text
-from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import sessionmaker, Session
+from fastapi import FastAPI, UploadFile, File, HTTPException
+import firebase_admin
+from firebase_admin import credentials, firestore
 import requests
-import io
+import os
+import shutil
 
-# --- 1. Database Setup (SQLite) ---
-# We use SQLite for Stage 4 persistence requirement. It's a file-based DB.
-DATABASE_URL = "sqlite:///./artify.db"
-engine = create_engine(DATABASE_URL, connect_args={"check_same_thread": False})
-SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
-Base = declarative_base()
+#Firebase Setup
+if not os.path.exists("../serviceAccountKey.json") and not os.path.exists("serviceAccountKey.json"):
+    print("WARNING: serviceAccountKey.json not found! Firebase will fail.")
 
-# Define our Database Table
-class ArtRequest(Base):
-    __tablename__ = "requests"
-    id = Column(Integer, primary_key=True, index=True)
-    filename = Column(String)
-    detected_objects = Column(String) # Stored as comma-separated string
-    art_description = Column(Text)
+# Initialize Firebase App
+# We check if it's already initialized to avoid errors during "hot reload"
+if not firebase_admin._apps:
+    cred = credentials.Certificate("serviceAccountKey.json")
+    firebase_admin.initialize_app(cred)
 
-# Create the table
-Base.metadata.create_all(bind=engine)
+db = firestore.client()
 
-# Dependency to get DB session
-def get_db():
-    db = SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
+#API Setup
+app = FastAPI(title="ArtiFy Gateway API (Firebase)")
 
-# --- 2. API Setup ---
-app = FastAPI(title="ArtiFy Gateway API")
-
-# URLs of our other internal services (container names from docker-compose)
+# URLs of internal services
 YOLO_SERVICE_URL = "http://yolo-service:8000/detect"
 BITNET_SERVICE_URL = "http://bitnet-service:8001/generate"
 
 @app.get("/")
 def root():
-    return {"status": "Gateway is online", "db": "SQLite"}
+    return {"status": "Gateway is online", "db": "Firebase Firestore"}
 
 @app.post("/process-art")
-async def process_art(file: UploadFile = File(...), db: Session = Depends(get_db)):
+async def process_art(file: UploadFile = File(...)):
     """
-    Main Orchestrator:
-    1. Sends image to YOLO -> gets objects
-    2. Sends objects to BitNet -> gets text
-    3. Saves everything to DB
-    4. Returns final result
+    1. Sends image to YOLO.
+    2. Sends objects to BitNet.
+    3. Saves result to Firestore (Cloud).
     """
-    # Read file once
+    # Read file content once
     file_content = await file.read()
     
-    # Step 1: Call YOLO Service
+    # YOLO
     try:
-        # We need to send the file as multipart/form-data
         files = {'file': (file.filename, file_content, file.content_type)}
-        yolo_response = requests.post(YOLO_SERVICE_URL, files=files)
-        yolo_data = yolo_response.json()
-        
-        # Extract objects (e.g., ["cat", "dog"])
+        yolo_res = requests.post(YOLO_SERVICE_URL, files=files)
+        yolo_data = yolo_res.json()
         detections = [d['object'] for d in yolo_data.get('detections', [])]
-        
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"YOLO Service failed: {e}")
+        raise HTTPException(status_code=500, detail=f"YOLO failed: {e}")
 
-    # Step 2: Call BitNet Service
+    # BitNet
     try:
-        # Prepare data for BitNet
-        payload = {
-            "detected_objects": detections,
-            "style": "poetic"
-        }
-        bitnet_response = requests.post(BITNET_SERVICE_URL, json=payload)
-        bitnet_data = bitnet_response.json()
-        
-        description = bitnet_data.get('generated_description', "No description generated.")
-        
+        payload = {"detected_objects": detections, "style": "poetic"}
+        bitnet_res = requests.post(BITNET_SERVICE_URL, json=payload)
+        bitnet_data = bitnet_res.json()
+        description = bitnet_data.get('generated_description', "No text")
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"BitNet Service failed: {e}")
+        raise HTTPException(status_code=500, detail=f"BitNet failed: {e}")
 
-    # Step 3: Save to Database
-    db_record = ArtRequest(
-        filename=file.filename,
-        detected_objects=",".join(detections),
-        art_description=description
-    )
-    db.add(db_record)
-    db.commit()
-    db.refresh(db_record)
-
-    # Step 4: Return Result
-    return {
-        "id": db_record.id,
-        "filename": db_record.filename,
+    # Firebase Save
+    # Create a new document in collection 'art_requests'
+    doc_ref = db.collection('art_requests').document()
+    doc_data = {
+        "filename": file.filename,
         "objects": detections,
-        "interpretation": description
+        "interpretation": description,
+        "timestamp": firestore.SERVER_TIMESTAMP
+    }
+    doc_ref.set(doc_data)
+
+    return {
+        "id": doc_ref.id,
+        "status": "Saved to Cloud",
+        "data": doc_data
     }
 
 @app.get("/history")
-def get_history(db: Session = Depends(get_db)):
+def get_history():
     """
-    Stage 4 Requirement: Endpoint to retrieve past interactions.
+    Fetch all past requests from Firebase Cloud.
     """
-    return db.query(ArtRequest).all()
+    docs = db.collection('art_requests').stream()
+    history = []
+    for doc in docs:
+        data = doc.to_dict()
+        data['id'] = doc.id
+        # Convert timestamp to string if present
+        if 'timestamp' in data:
+            data['timestamp'] = str(data['timestamp'])
+        history.append(data)
+    return history

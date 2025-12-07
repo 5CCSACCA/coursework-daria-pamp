@@ -51,22 +51,23 @@ services:
   # 3. Worker Service (Consumes queue)
   # ------------------------------------------------------
   worker-service:
-    build: ./worker-service
-    restart: always
-    volumes:
-      - ./worker-service/app:/app/app
-      - ./gateway-api/serviceAccountKey.json:/app/serviceAccountKey.json
-    depends_on:
-      - rabbitmq
-      - yolo-service
-      - bitnet-service
-    healthcheck:
-      test: ["CMD", "echo", "ok"]
-      interval: 30s
-      timeout: 5s
-      retries: 3
-    networks:
-      - app-network
+   build: ./worker-service
+   restart: always
+   volumes:
+     - ./worker-service/app:/app/app
+     - ./gateway-api/serviceAccountKey.json:/app/serviceAccountKey.json
+   depends_on:
+     - rabbitmq
+     - yolo-service
+     - bitnet-service
+   healthcheck:
+     test: ["CMD", "echo", "ok"]
+     interval: 30s
+     timeout: 5s
+     retries: 3
+   networks:
+     - app-network
+
 
   # ------------------------------------------------------
   # 4. YOLO Object Detection Service

@@ -73,7 +73,9 @@ def generate_text(request: TextRequest):
             "generated_description": cleaned_text
         }
     except Exception as e:
+        logger.error(f"Generation error: {e}")
         raise HTTPException(status_code=500, detail=str(e))
+
 
 
 

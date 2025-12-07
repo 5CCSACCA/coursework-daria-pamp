@@ -10,8 +10,6 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && rm -rf /var/lib/apt/lists/*
 
 # Install Python libraries
-# torch & transformers: for the AI model
-# fastapi & uvicorn: for the API
 RUN pip install --no-cache-dir torch transformers fastapi uvicorn python-multipart
 
 # Copy the app code

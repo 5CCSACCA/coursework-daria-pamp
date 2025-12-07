@@ -1,7 +1,19 @@
 version: '3.8'
 
 services:
-  # Service 1: Computer Vision (YOLO)
+  # 1. Main Gateway API (Port 8080)
+  # Users talk to THIS service.
+  gateway-api:
+    build: ./gateway-api
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./gateway-api/app:/app/app
+    depends_on:
+      - yolo-service
+      - bitnet-service
+
+  # 2. YOLO Service (Internal Port 8000)
   yolo-service:
     build: ./yolo-service
     container_name: yolo_container
@@ -10,15 +22,11 @@ services:
     volumes:
       - ./yolo-service/app:/app/app
 
-  # Service 2: Text Generation (LLM)
+  # 3. BitNet Service (Internal Port 8001)
   bitnet-service:
     build: ./bitnet-service
     container_name: llm_container
     ports:
-    feature/bitnet-impl
       - "8001:8001"
-
-      - "8001:8001" 
-      develop
     volumes:
       - ./bitnet-service/app:/app/app

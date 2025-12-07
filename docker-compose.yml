@@ -1,27 +1,33 @@
 version: '3.8'
 
 services:
-  # 1. RabbitMQ
+
+  # -----------------------------
+  # 1. RabbitMQ (Message Broker)
+  # -----------------------------
   rabbitmq:
     image: "rabbitmq:3-management"
     container_name: rabbitmq
-    restart: always  # <--- NEW: Restart if crashes
+    restart: always
     ports:
       - "5672:5672"
       - "15672:15672"
     environment:
-      # FIX: Push memory limit to 90% (extreme mode for limited VM)
       RABBITMQ_SERVER_ADDITIONAL_ERL_ARGS: "-rabbit vm_memory_high_watermark 0.9"
     healthcheck:
       test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
       interval: 10s
       timeout: 5s
       retries: 5
+    networks:
+      - app-network
 
-  # 2. Gateway API
+  # -----------------------------
+  # 2. Gateway API (entrypoint)
+  # -----------------------------
   gateway-api:
     build: ./gateway-api
-    restart: always  # <--- NEW: Retry connection until RabbitMQ is ready
+    restart: always
     ports:
       - "8080:8080"
     volumes:
@@ -30,11 +36,22 @@ services:
     depends_on:
       rabbitmq:
         condition: service_healthy
+      - yolo-service
+      - bitnet-service
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - app-network
 
+  # -----------------------------
   # 3. Worker Service
+  # -----------------------------
   worker-service:
     build: ./worker-service
-    restart: always  # <--- NEW: Essential for workers!
+    restart: always
     volumes:
       - ./worker-service/app:/app/app
       - ./gateway-api/serviceAccountKey.json:/app/serviceAccountKey.json
@@ -42,21 +59,49 @@ services:
       - rabbitmq
       - yolo-service
       - bitnet-service
+    healthcheck:
+      test: ["CMD", "echo", "ok"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+    networks:
+      - app-network
 
-  # 4. YOLO Service
+  # -----------------------------
+  # 4. YOLO Object Detection
+  # -----------------------------
   yolo-service:
     build: ./yolo-service
     restart: always
-    ports:
-      - "8000:8000"
     volumes:
       - ./yolo-service/app:/app/app
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - app-network
 
-  # 5. BitNet Service
+  # -----------------------------
+  # 5. BitNet (GPT-2) Text Generator
+  # -----------------------------
   bitnet-service:
     build: ./bitnet-service
     restart: always
-    ports:
-      - "8001:8001"
     volumes:
       - ./bitnet-service/app:/app/app
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8001"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - app-network
+
+# -----------------------------
+# Network
+# -----------------------------
+networks:
+  app-network:
+    driver: bridge

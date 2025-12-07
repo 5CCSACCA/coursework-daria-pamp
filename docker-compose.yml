@@ -1,9 +1,20 @@
 version: '3.8'
 
 services:
+  # Service 1: Computer Vision (YOLO)
   yolo-service:
     build: ./yolo-service
+    container_name: yolo_container
     ports:
       - "8001:8000"
     volumes:
-      - ./yolo-service/app:/code/app
+      - ./yolo-service/app:/app/app
+
+  # Service 2: Text Generation (LLM)
+  bitnet-service:
+    build: ./bitnet-service
+    container_name: llm_container
+    ports:
+      - "8001:8001" # Note: different port!
+    volumes:
+      - ./bitnet-service/app:/app/app

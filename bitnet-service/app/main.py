@@ -51,6 +51,15 @@ def generate_text(request: TextRequest):
     else:
         # Fallback for empty detections (Mona Lisa, Abstract, or failed detection)
         prompt = "I saw a mysterious and beautiful masterpiece painting. It makes me feel"
+        
+# --- Optional: Apply style modifiers ---
+    if request.style == "formal":
+        prompt = "Describe the artwork in a formal academic tone. " + prompt
+    elif request.style == "poetic":
+        prompt = "Create a poetic and emotional description. " + prompt
+    elif request.style == "simple":
+        prompt = "Write in simple and clear language. " + prompt
+
     
     logger.info(f"Generating for prompt: {prompt}")
 
@@ -82,6 +91,7 @@ def generate_text(request: TextRequest):
     except Exception as e:
         logger.error(f"Generation error: {e}")
         raise HTTPException(status_code=500, detail=str(e))
+
 
 
 

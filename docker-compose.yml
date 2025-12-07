@@ -6,7 +6,7 @@ services:
     build: ./yolo-service
     container_name: yolo_container
     ports:
-      - "8001:8000"
+      - "8000:8000"
     volumes:
       - ./yolo-service/app:/app/app
 

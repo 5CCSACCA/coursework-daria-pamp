@@ -1,37 +1,42 @@
 version: '3.8'
 
 services:
-  # 1. RabbitMQ (The Message Broker)
+  # 1. RabbitMQ
   rabbitmq:
     image: "rabbitmq:3-management"
     container_name: rabbitmq
+    restart: always  # <--- NEW: Restart if crashes
     ports:
-      - "5672:5672"   # Communication port
-      - "15672:15672" # Dashboard port (Login: guest/guest)
+      - "5672:5672"
+      - "15672:15672"
+    environment:
+      # FIX: Push memory limit to 90% (extreme mode for limited VM)
+      RABBITMQ_SERVER_ADDITIONAL_ERL_ARGS: "-rabbit vm_memory_high_watermark 0.9"
     healthcheck:
       test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
       interval: 10s
       timeout: 5s
       retries: 5
 
-  # 2. Gateway API (Producer)
+  # 2. Gateway API
   gateway-api:
     build: ./gateway-api
+    restart: always  # <--- NEW: Retry connection until RabbitMQ is ready
     ports:
       - "8080:8080"
     volumes:
       - ./gateway-api/app:/app/app
+      - ./gateway-api/serviceAccountKey.json:/app/serviceAccountKey.json
     depends_on:
       rabbitmq:
         condition: service_healthy
 
-  # 3. Worker Service (Consumer) - NEW!
-  # This service does the hard work in the background
+  # 3. Worker Service
   worker-service:
     build: ./worker-service
+    restart: always  # <--- NEW: Essential for workers!
     volumes:
       - ./worker-service/app:/app/app
-      # Needs the key to save to Firebase!
       - ./gateway-api/serviceAccountKey.json:/app/serviceAccountKey.json
     depends_on:
       - rabbitmq
@@ -41,6 +46,7 @@ services:
   # 4. YOLO Service
   yolo-service:
     build: ./yolo-service
+    restart: always
     ports:
       - "8000:8000"
     volumes:
@@ -49,6 +55,7 @@ services:
   # 5. BitNet Service
   bitnet-service:
     build: ./bitnet-service
+    restart: always
     ports:
       - "8001:8001"
     volumes:

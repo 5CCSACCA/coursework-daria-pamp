@@ -42,32 +42,22 @@ def process_task(ch, method, properties, body):
         else:
             print(f"YOLO Error: {yolo_resp.text}")
             detections = []
-
+        
         print(f" -> YOLO found: {detections}")
 
-        # 2. Call BitNet (FIXED PROMPT LOGIC)
-        # We verify if we have objects to create a logical prompt
-        if detections:
-            # Join objects: "cat, dog"
-            objs_str = ", ".join(detections)
-            prompt_payload = {"detected_objects": detections, "style": "poetic"}
-        else:
-            # Fallback if no objects found (prevents hallucination)
-            prompt_payload = {"detected_objects": [], "style": "abstract"}
-            
-        bitnet_resp = requests.post(BITNET_URL, json=prompt_payload)
-        
-        if bitnet_resp.status_code == 200:
-            full_text = bitnet_resp.json().get('generated_description', '')
-            # FIX: Cut off text at the last complete sentence to avoid rambling
-            if "." in full_text:
-                description = full_text.rsplit('.', 1)[0] + "."
+        # 2. Call BitNet
+        # We send the list directly. The BitNet service now handles the logic.
+        try:
+            bitnet_resp = requests.post(BITNET_URL, json={"detected_objects": detections})
+            if bitnet_resp.status_code == 200:
+                description = bitnet_resp.json().get('generated_description', 'No text generated')
             else:
-                description = full_text
-        else:
-            description = "Could not generate description."
-
+                description = "Error generating description."
+        except Exception as e:
+            description = f"BitNet Connection Error: {e}"
+            
         print(f" -> BitNet generated: {description[:50]}...")
+
 
         # 3. Update Firebase
         doc_ref = db.collection('art_requests').document(request_id)

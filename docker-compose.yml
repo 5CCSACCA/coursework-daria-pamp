@@ -9,8 +9,8 @@ services:
       - "5672:5672"
       - "15672:15672"
     environment:
-      # FIX: Allow RabbitMQ to use up to 80% of RAM before blocking us
-      RABBITMQ_VM_MEMORY_HIGH_WATERMARK: 0.8
+      # FIX: New way to set memory limit (80%) without crashing
+      RABBITMQ_SERVER_ADDITIONAL_ERL_ARGS: "-rabbit vm_memory_high_watermark 0.8"
     healthcheck:
       test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
       interval: 10s

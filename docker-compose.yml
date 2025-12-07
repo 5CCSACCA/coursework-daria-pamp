@@ -1,13 +1,16 @@
 version: '3.8'
 
 services:
-  # 1. RabbitMQ (The Message Broker)
+  # 1. RabbitMQ
   rabbitmq:
     image: "rabbitmq:3-management"
     container_name: rabbitmq
     ports:
-      - "5672:5672"   # Communication port
-      - "15672:15672" # Dashboard port (Login: guest/guest)
+      - "5672:5672"
+      - "15672:15672"
+    environment:
+      # FIX: Allow RabbitMQ to use up to 80% of RAM before blocking us
+      RABBITMQ_VM_MEMORY_HIGH_WATERMARK: 0.8
     healthcheck:
       test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
       interval: 10s

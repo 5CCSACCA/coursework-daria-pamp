@@ -8,9 +8,7 @@ app = FastAPI(
     description="Detects objects using YOLOv8n (Cloud-friendly)"
 )
 
-# ---------------------------
 # Load Model at Startup
-# ---------------------------
 @app.on_event("startup")
 def load_model():
     global model
@@ -19,25 +17,19 @@ def load_model():
     print("YOLO model loaded successfully!")
 
 
-# ---------------------------
 # Health Endpoint (Stage 9)
-# ---------------------------
 @app.get("/health")
 def health():
     return {"status": "ok"}
 
 
-# ---------------------------
 # Default Status Route
-# ---------------------------
 @app.get("/")
 def home():
     return {"status": "YOLO service online", "model": "YOLOv8n"}
 
 
-# ---------------------------
-# Detect Route (MATCHES WORKER)
-# ---------------------------
+# Detect Route
 @app.post("/detect")
 async def detect(file: UploadFile = File(...)):
     """
@@ -47,7 +39,7 @@ async def detect(file: UploadFile = File(...)):
     print(f"Received file: {file.filename}")
 
     try:
-        # Read & Convert
+        # Read, convert
         image_bytes = await file.read()
         image = Image.open(io.BytesIO(image_bytes))
 

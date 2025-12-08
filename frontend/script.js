@@ -41,22 +41,26 @@ async function uploadImage() {
     const formData = new FormData();
     formData.append("file", file);
 
-    const response = await fetch("http://localhost:8080/upload", {
-        method: "POST",
-        headers: { "Authorization": token },
-        body: formData
-    });
+    try {
+        const response = await fetch("http://localhost:8080/process-art", {
+            method: "POST",
+            headers: { "Authorization": "Bearer " + token },
+            body: formData
+        });
 
-    const data = await response.json();
+        const data = await response.json();
 
-    if (!response.ok) {
-        errorBox.textContent = "Error: " + (data.detail || "Upload failed");
-        return;
+        if (!response.ok) {
+            errorBox.textContent = "Error: " + (data.detail || "Upload failed");
+            return;
+        }
+
+        resultTitle.style.display = "block";
+        result.textContent = "Uploaded ✔ Interpretation will appear in Firestore.";
+
+    } catch (err) {
+        errorBox.textContent = "Network error: " + err.message;
     }
-
-    // Success
-    resultTitle.style.display = "block";
-    result.textContent = "Uploaded ✔ Waiting for interpretation…";
 }
 
 // CLEAR FORM

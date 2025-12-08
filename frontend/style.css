@@ -1,102 +1,138 @@
+/* Background: soft AI gradient */
 body {
     margin: 0;
     padding: 0;
-    font-family: Arial, sans-serif;
-    background: #f4f4f4;
+    font-family: 'Inter', Arial, sans-serif;
+    background: linear-gradient(135deg, #0f0f1a 0%, #1a1035 50%, #0f1c2f 100%);
+    background-attachment: fixed;
+    color: #e2e2e2;
 }
 
+/* Center panel */
 .container {
-    width: 400px;
-    margin: 60px auto;
-    padding: 25px;
-    background: white;
-    border-radius: 8px;
-    box-shadow: 0 0 10px rgba(0,0,0,0.15);
+    width: 420px;
+    margin: 70px auto;
+    padding: 30px;
+    background: rgba(20, 20, 35, 0.75);
+    backdrop-filter: blur(8px);
+    border-radius: 12px;
+
+    border: 1px solid rgba(120, 120, 255, 0.15);
+    box-shadow: 0 0 25px rgba(90, 40, 255, 0.25);
 }
 
+/* Title */
 h1 {
     text-align: center;
-    margin-bottom: 20px;
-    font-size: 22px;
+    margin-bottom: 25px;
+    font-size: 24px;
+    color: #dfe3ff;
+    letter-spacing: 1px;
 }
 
+/* Labels */
 .label {
     margin-top: 15px;
     font-weight: bold;
     display: block;
+    color: #c7c7ff;
 }
 
+/* Token box */
 textarea {
     width: 100%;
     height: 90px;
     margin-top: 5px;
-    padding: 8px;
+    padding: 10px;
     resize: none;
-    border: 1px solid #ccc;
-    border-radius: 5px;
+
+    background: #181830;
+    border: 1px solid #3d3d70;
+    color: #e2e2ff;
+    border-radius: 6px;
 }
 
+/* File input */
 input[type="file"] {
     margin-top: 10px;
-}
-
-.buttons {
-    margin-top: 15px;
-    display: flex;
-    gap: 10px;
-}
-
-button {
-    flex: 1;
-    padding: 10px;
-    background: #3a7afe;
-    color: white;
-    border: none;
-    border-radius: 5px;
-    font-size: 15px;
-    cursor: pointer;
-}
-
-button:hover {
-    background: #2f66d6;
-}
-
-.status {
-    margin-top: 15px;
-    font-weight: bold;
-    color: #444;
-}
-
-.status.success {
-    color: #2e7d32;
-}
-
-.status.error {
-    color: #c62828;
-}
-
-.result {
-    margin-top: 10px;
-    color: #333;
+    color: #aaa;
 }
 
 .file-name {
     margin-top: 5px;
     font-size: 13px;
-    color: #555;
+    color: #9da4ff;
 }
 
+/* Preview box */
 .preview {
-    max-width: 200px;
-    margin-top: 10px;
+    max-width: 220px;
+    margin-top: 15px;
     display: none;
-    border-radius: 6px;
-    border: 1px solid #ddd;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    border-radius: 8px;
+
+    border: 1px solid #39397a;
+    box-shadow: 0 0 12px rgba(110, 90, 255, 0.25);
 }
 
+/* Buttons container */
+.buttons {
+    margin-top: 20px;
+    display: flex;
+    gap: 12px;
+}
+
+/* Upload button */
+button {
+    flex: 1;
+    padding: 11px;
+    background: #4b63ff;
+    border: none;
+    border-radius: 6px;
+    color: white;
+    font-size: 15px;
+    cursor: pointer;
+    transition: 0.2s ease;
+}
+
+button:hover {
+    background: #3651ff;
+    box-shadow: 0 0 10px rgba(80, 110, 255, 0.4);
+}
+
+/* Clear button */
+.clear-btn {
+    background: #3a3a55;
+}
+
+.clear-btn:hover {
+    background: #4a4a70;
+}
+
+/* Status outputs */
+.status {
+    margin-top: 15px;
+    font-weight: bold;
+    color: #cdd1ff;
+}
+
+.status.success {
+    color: #76ffb9;
+}
+
+.status.error {
+    color: #ff6b6b;
+}
+
+.result {
+    margin-top: 10px;
+    color: #e7e7ff;
+}
+
+/* Loading indicator */
 .loading {
     display: none;
-    color: #555;
-    margin-top: 10px;
+    margin-top: 12px;
+    color: #9faaff;
+    font-style: italic;
 }

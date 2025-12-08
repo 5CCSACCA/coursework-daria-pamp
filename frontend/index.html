@@ -14,22 +14,21 @@
     <label class="label">Firebase ID Token</label>
     <textarea id="tokenInput" placeholder="Paste your Firebase ID token here"></textarea>
 
-    <label class="label">Choose image</label>
+    <label class="label">Choose Image</label>
     <input type="file" id="fileInput" accept="image/*">
-
     <div id="fileName" class="file-name"></div>
 
     <img id="preview" class="preview">
 
     <div class="buttons">
         <button type="button" onclick="uploadImage()">Upload</button>
-        <button type="button" onclick="clearForm()">Clear</button>
+        <button type="button" onclick="clearForm()" class="clear-btn">Clear</button>
     </div>
 
     <div id="status" class="status"></div>
     <div id="result" class="result"></div>
 
-    <div id="loading" class="loading">Uploading…</div>
+    <div id="loading" class="loading">Processing…</div>
 
 </div>
 

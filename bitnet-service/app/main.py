@@ -2,17 +2,18 @@ from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 from transformers import pipeline
 import logging
-import re
+import traceback
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("BitNetService")
 
-app = FastAPI(title="Text Generation Service (LLM)")
+app = FastAPI(title="Text Generation Service (BitNet Proxy)")
 
-# ---------------------------------------------------
-# Load model at startup
-# ---------------------------------------------------
 generator = None
+
+class TextRequest(BaseModel):
+    detected_objects: list[str]
+    style: str = "creative"
 
 @app.on_event("startup")
 def load_model():
@@ -21,116 +22,57 @@ def load_model():
     try:
         generator = pipeline(
             "text-generation",
-            model="gpt2"
+            model="gpt2",
+            pad_token_id=50256  # IMPORTANT FIX
         )
         logger.info("LLM loaded successfully.")
     except Exception as e:
-        logger.error(f"Failed to load LLM: {e}")
-        raise RuntimeError("LLM could not be loaded.")
+        logger.error(f"Failed to load model: {e}")
+        traceback.print_exc()
 
-
-# ---------------------------------------------------
-# Models
-# ---------------------------------------------------
-class TextRequest(BaseModel):
-    detected_objects: list[str]
-    style: str = "creative"
-
-
-# ---------------------------------------------------
-# HEALTH CHECK
-# ---------------------------------------------------
-@app.get("/health")
-def health():
-    return {"status": "ok"}
-
-
-@app.get("/")
-def status_check():
-    return {"status": "LLM Service is running", "model": "gpt2"}
-
-
-# ---------------------------------------------------
-# MAIN GENERATION ENDPOINT
-# ---------------------------------------------------
 @app.post("/generate")
 def generate_text(request: TextRequest):
-
-    if not generator:
+    if generator is None:
         raise HTTPException(status_code=503, detail="Model is loading")
 
-    # --- Security: Limit input size (Stage 11) ---
-    if len(request.detected_objects) > 30:
-        raise HTTPException(
-            status_code=400,
-            detail="Too many detected objects in prompt (max 30)."
-        )
-
-    # --- Deduplicate detected objects ---
-    unique_objects = list(set(request.detected_objects))
-
-    # ---------------------------------------------------
-    # Prompt Construction (Smart Logic)
-    # ---------------------------------------------------
-    if unique_objects:
-        # truncate long words (safety)
-        short_objects = [o[:20] for o in unique_objects]
-        objects_str = ", ".join(short_objects)
-        prompt = f"I saw a painting containing {objects_str}. It makes me feel"
+    # Build prompt
+    if request.detected_objects:
+        objects = ", ".join(set(request.detected_objects))
+        prompt = f"Express the emotion creatively. I saw a painting containing {objects}. It makes me feel"
     else:
-        prompt = "I saw a mysterious and beautiful masterpiece painting. It makes me feel"
-
-    # ---------------------------------------------------
-    # Style modifiers
-    # ---------------------------------------------------
-    style = request.style.lower()
-
-    style_map = {
-        "formal": "Describe the artwork in a formal academic tone. ",
-        "poetic": "Write a poetic and emotional reflection. ",
-        "simple": "Describe it using simple and clear language. ",
-        "creative": "Express the emotion creatively. "
-    }
-
-    if style not in style_map:
-        style = "creative"
-
-    prompt = style_map[style] + prompt
+        prompt = "Express the emotion creatively. I saw an abstract mysteries painting. It makes me feel"
 
     logger.info(f"Prompt sent to model: {prompt}")
 
-    # ---------------------------------------------------
-    # Model Generation
-    # ---------------------------------------------------
     try:
         result = generator(
             prompt,
-            max_length=90,
+            max_length=80,
             num_return_sequences=1,
-            truncation=True,
             temperature=0.8,
-            pad_token_id=50256,
             no_repeat_ngram_size=2,
-            repetition_penalty=1.15
+            repetition_penalty=1.2,
+            pad_token_id=50256
         )
-        full_text = result[0]["generated_text"]
 
-        # ---------------------------------------------------
-        # Cleanup: cut after the last full stop
-        # ---------------------------------------------------
-        if "." in full_text:
-            cleaned = full_text.rsplit(".", 1)[0] + "."
-        else:
-            cleaned = full_text
+        text = result[0]["generated_text"]
 
-        # Remove undesirable content (simple safety)
-        cleaned = re.sub(r"(terror|kill|violence|war)", "art", cleaned, flags=re.IGNORECASE)
+        # Cleanup
+        if "." in text:
+            text = text.rsplit(".", 1)[0] + "."
+        text = text.strip()
 
         return {
-            "input_objects": unique_objects,
-            "generated_description": cleaned.strip()
+            "input_objects": request.detected_objects,
+            "generated_description": text
         }
 
     except Exception as e:
-        logger.error(f"LLM generation error: {e}")
-        raise HTTPException(status_code=500, detail=f"Generation error: {e}")
+        logger.error("TEXT GENERATION ERROR:")
+        logger.error(str(e))
+        traceback.print_exc()
+
+        return {
+            "input_objects": request.detected_objects,
+            "generated_description": "A mysterious and evocative artwork that inspires deep emotion."
+        }

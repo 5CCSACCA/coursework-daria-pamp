@@ -80,13 +80,15 @@ def process_task(ch, method, properties, body):
         # ---------------------------
         try:
             prompt_text = (
-                "You are The Dream Interpreter — an oracle who explains visions using symbolic meaning. "
+                "You are The Dream Interpreter — a gentle oracle who explains symbolic visions. "
                 f"The following symbols appeared in a dream: {detections}. "
-                "Write a short poetic interpretation (2–4 sentences). "
-                "Keep it calm, meaningful, and mystical. "
-                "Do not use disturbing themes, violence, or negativity. "
-                "Speak as if gently interpreting a dream."
-                )
+                "Give a short (2–4 sentence) mystical interpretation. "
+                "Use soft, poetic, calming language. "
+                "Focus on themes of guidance, hope, and inner reflection. "
+                "Avoid negativity, violence, fear, or dark themes. "
+                "Your answer should feel comforting and meaningful."
+            )
+
 
             bitnet_resp = safe_post(
                 BITNET_URL,

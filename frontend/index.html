@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -7,6 +6,7 @@
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
+
 <div class="container">
 
     <h1>ArtiFy – Upload Artwork</h1>
@@ -17,10 +17,17 @@
     <label class="label">Choose image</label>
     <input type="file" id="fileInput" accept="image/*">
 
-    <button onclick="uploadImage()">Upload</button>
+    <img id="preview" class="preview">
+
+    <div class="buttons">
+        <button type="button" onclick="uploadImage()">Upload</button>
+        <button type="button" onclick="clearForm()">Clear</button>
+    </div>
 
     <div id="status" class="status"></div>
     <div id="result" class="result"></div>
+
+    <div id="loading" class="loading">Uploading…</div>
 
 </div>
 

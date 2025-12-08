@@ -80,21 +80,14 @@ def process_task(ch, method, properties, body):
         # ---------------------------
         try:
             prompt_text = (
-                "You are The Dream Interpreter — a gentle oracle who explains symbolic visions. "
-                f"The following symbols appeared in a dream: {detections}. "
-                "Give a short (2–4 sentence) mystical interpretation. "
-                "Use soft, poetic, calming language. "
-                "Focus on themes of guidance, hope, and inner reflection. "
-                "Avoid negativity, violence, fear, or dark themes. "
-                "Your answer should feel comforting and meaningful."
+                f"You are The Dream Interpreter — a gentle oracle who explains symbolic visions. "
+                f"The following symbol appeared in a dream: {{{detections[0] if detections else 'unknown'}}}. "
+                "Give a short mystical interpretation (2–3 sentences). Use soft, poetic, calming language."
             )
-
 
             bitnet_resp = safe_post(
                 BITNET_URL,
-                json={
-                    "detected_objects": [prompt_text]
-                }
+                json={"prompt": prompt_text}
             )
 
             if bitnet_resp.status_code == 200:

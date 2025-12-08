@@ -79,13 +79,31 @@ def process_task(ch, method, properties, body):
         # 2. BITNET GENERATION
         # ---------------------------
         try:
-            bitnet_resp = safe_post(BITNET_URL, json={"detected_objects": detections})
+            prompt_text = (
+                "You are The Dream Interpreter — an oracle who explains visions using symbolic meaning. "
+                f"The following symbols appeared in a dream: {detections}. "
+                "Write a short poetic interpretation (2–4 sentences). "
+                "Keep it calm, meaningful, and mystical. "
+                "Do not use disturbing themes, violence, or negativity. "
+                "Speak as if gently interpreting a dream."
+                )
+
+            bitnet_resp = safe_post(
+                BITNET_URL,
+                json={
+                    "prompt": prompt_text
+                }
+            )
+
             if bitnet_resp.status_code == 200:
                 description = bitnet_resp.json().get("generated_description", "")
+
             else:
                 description = "BitNet returned an error."
+
         except Exception as e:
             description = f"BitNet error: {e}"
+
 
         print(f" -> BitNet generated: {description[:80]}...")
 

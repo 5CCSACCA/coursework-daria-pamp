@@ -1,57 +1,47 @@
 body {
     font-family: Arial, sans-serif;
-    background: #0f0f0f;
+    background: #0b0b0b;
     color: #fff;
     margin: 0;
-    padding: 40px 0;
     display: flex;
     justify-content: center;
+    padding: 40px 0;
 }
 
 .container {
     background: #141414;
     padding: 30px;
-    border-radius: 14px;
     width: 420px;
-    box-shadow: 0 0 18px rgba(240, 220, 140, 0.08);
-    border: 1px solid rgba(255, 255, 255, 0.06);
+    border-radius: 16px;
+    box-shadow: 0 0 20px rgba(240, 220, 140, 0.1);
 }
 
 .logo {
     display: flex;
     justify-content: center;
-    margin-bottom: 10px;
+    margin-bottom: 8px;
 }
 
 h1 {
     text-align: center;
-    margin: 5px 0 10px;
-    font-weight: 600;
+    margin-bottom: 6px;
 }
 
 .subtitle {
     text-align: center;
+    color: #d9cfa8;
     font-size: 14px;
-    color: #d7ceae;
     margin-bottom: 20px;
-    opacity: 0.9;
-}
-
-label {
-    font-weight: 600;
-    margin-top: 15px;
-    display: block;
 }
 
 textarea, input[type=file] {
     width: 100%;
-    margin-top: 6px;
     padding: 10px;
-    border-radius: 8px;
-    border: none;
+    margin-top: 5px;
     background: #1f1f1f;
+    border: none;
+    border-radius: 8px;
     color: #eee;
-    font-size: 14px;
 }
 
 textarea {
@@ -59,39 +49,11 @@ textarea {
 }
 
 button {
-    background: #4169e1;
-    color: white;
-    border: none;
-    padding: 11px 20px;
-    border-radius: 8px;
-    cursor: pointer;
     width: 48%;
-    font-size: 15px;
-    transition: 0.2s;
-}
-
-button:hover {
-    background: #5a7ef5;
-    box-shadow: 0 0 10px rgba(90, 126, 245, 0.4);
-}
-
-.clear-btn {
-    background: #3b3b3b;
-}
-
-.clear-btn:hover {
-    background: #555;
-}
-
-.button-row {
-    margin-top: 20px;
-    display: flex;
-    justify-content: space-between;
-}
-
-.error {
-    color: #ff6b6b;
-    margin-top: 10px;
+    padding: 10px;
+    border-radius: 8px;
+    border: none;
+    cursor: pointer;
 }
 
 #preview {

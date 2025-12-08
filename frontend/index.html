@@ -2,37 +2,60 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>ArtiFy – Upload Artwork</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DeepSymbol – Upload Your Vision</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
 <div class="container">
 
-    <h1>ArtiFy – Upload Artwork</h1>
+    <div class="logo">
+    <svg width="80" height="80" viewBox="0 0 100 100">
+        <!-- Outer soft glow -->
+        <circle cx="50" cy="50" r="42" fill="#fdf3c4" opacity="0.25" />
 
-    <label class="label">Firebase ID Token</label>
-    <textarea id="tokenInput" placeholder="Paste your Firebase ID token here"></textarea>
+        <!-- Inner crescent glow -->
+        <circle cx="50" cy="50" r="32" fill="#fcecc2" opacity="0.4" />
 
-    <label class="label">Choose Image</label>
-    <input type="file" id="fileInput" accept="image/*">
-    <div id="fileName" class="file-name"></div>
+        <!-- Crescent -->
+        <path
+            d="M60 20 
+               A30 30 0 1 0 60 80 
+               A20 20 0 1 1 60 20"
+            fill="#fff3b0"
+        />
+    </svg>
+</div>
 
-    <img id="preview" class="preview">
+    <h1>DeepSymbol</h1>
 
-    <div class="buttons">
-        <button type="button" onclick="uploadImage()">Upload</button>
-        <button type="button" onclick="clearForm()" class="clear-btn">Clear</button>
+    <p class="subtitle">
+        AI oracle that interprets everyday objects as psychological signs and symbols.
+    </p>
+
+    <label>Firebase ID Token</label>
+    <textarea id="tokenInput"></textarea>
+
+    <label>Choose Image</label>
+    <input type="file" id="fileInput">
+
+    <p id="fileName"></p>
+    <img id="preview" style="display:none;" />
+
+    <div class="button-row">
+        <button onclick="uploadImage()" id="uploadBtn">Upload</button>
+        <button class="clear-btn" onclick="clearForm()">Clear</button>
     </div>
 
-    <div id="status" class="status"></div>
-    <h3 id="resultTitle" style="display:none; margin-top:15px;">Result</h3>
-    <div id="result" class="result"></div>
+    <p id="error" class="error"></p>
 
-    <div id="loading" class="loading">Processing…</div>
+    <h3 id="resultTitle" style="display:none;">Result</h3>
+    <p id="result"></p>
 
 </div>
 
 <script src="script.js"></script>
 </body>
 </html>
+

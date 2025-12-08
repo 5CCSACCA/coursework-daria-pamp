@@ -1,100 +1,24 @@
-async function uploadImage() {
-    const fileInput = document.getElementById("fileInput");
-    const tokenInput = document.getElementById("tokenInput");
-    const statusEl = document.getElementById("status");
-    const resultEl = document.getElementById("result");
-    const resultTitle = document.getElementById("resultTitle");
+const fileInput = document.getElementById("fileInput");
+const preview = document.getElementById("preview");
+const fileName = document.getElementById("fileName");
+const result = document.getElementById("result");
+const resultTitle = document.getElementById("resultTitle");
+const errorBox = document.getElementById("error");
 
-    // Reset UI
-    statusEl.textContent = "";
-    statusEl.className = "status";
-    resultEl.textContent = "";
-    resultTitle.style.display = "none";
+let lastRequestId = null;   // <— запоминаем ID заявки
+let pollingInterval = null; // <— таймер авто-обновления
 
-    // Show loading indicator
-    document.getElementById("loading").style.display = "block";
-
-    // Validate file
-    if (!fileInput.files || fileInput.files.length === 0) {
-        alert("Please choose an image.");
-        document.getElementById("loading").style.display = "none";
-        return;
-    }
-
-    // Validate token
-    const token = tokenInput.value.trim();
-    if (!token) {
-        alert("Please paste your Firebase ID token.");
-        document.getElementById("loading").style.display = "none";
-        return;
-    }
-
+// ---------------------------------------
+// IMAGE PREVIEW
+// ---------------------------------------
+fileInput.addEventListener("change", () => {
     const file = fileInput.files[0];
-    const formData = new FormData();
-    formData.append("file", file);
+    if (!file) return;
 
-    statusEl.textContent = "Uploading...";
-
-    try {
-        const response = await fetch("http://localhost:8080/process-art", {
-            method: "POST",
-            headers: {
-                "Authorization": "Bearer " + token
-            },
-            body: formData
-        });
-
-        let data = null;
-        try { data = await response.json(); } catch {}
-
-        if (!response.ok) {
-            statusEl.textContent = "Error: " + (data?.detail || response.statusText);
-            statusEl.classList.add("error");
-            document.getElementById("loading").style.display = "none";
-            return;
-        }
-
-        // SUCCESS
-        statusEl.textContent = "Status: " + data.status + ". Request ID: " + data.id;
-        statusEl.classList.add("success");
-
-        resultTitle.style.display = "block";
-
-        if (data.message) {
-            resultEl.textContent = data.message;
-        } else {
-            resultEl.textContent = "Your artwork is queued. Check Firestore for the final result.";
-        }
-
-    } catch (err) {
-        statusEl.textContent = "Network error: " + err.message;
-        statusEl.classList.add("error");
-    }
-
-    // Always hide loading indicator
-    document.getElementById("loading").style.display = "none";
-}
-
-
-// =======================
-// IMAGE PREVIEW + FILENAME
-// =======================
-
-document.getElementById("fileInput").addEventListener("change", function () {
-    const preview = document.getElementById("preview");
-    const fileNameEl = document.getElementById("fileName");
-    const file = this.files[0];
-
-    if (!file) {
-        preview.style.display = "none";
-        fileNameEl.textContent = "";
-        return;
-    }
-
-    fileNameEl.textContent = "Selected: " + file.name;
+    fileName.textContent = "Selected: " + file.name;
 
     const reader = new FileReader();
-    reader.onload = (e) => {
+    reader.onload = e => {
         preview.src = e.target.result;
         preview.style.display = "block";
     };
@@ -102,21 +26,119 @@ document.getElementById("fileInput").addEventListener("change", function () {
 });
 
 
-// =======================
-// CLEAR FORM (student-level realistic)
-// =======================
+// ---------------------------------------
+// UPLOAD IMAGE
+// ---------------------------------------
+async function uploadImage() {
+    errorBox.textContent = "";
+    resultTitle.style.display = "none";
+    result.textContent = "";
 
+    const token = document.getElementById("tokenInput").value.trim();
+    const file = fileInput.files[0];
 
-function clearForm() {
-    document.getElementById("tokenInput").value = "";
-    document.getElementById("fileInput").value = "";
-    document.getElementById("fileName").textContent = "";
-    document.getElementById("preview").style.display = "none";
+    if (!token) {
+        errorBox.textContent = "Error: token missing";
+        return;
+    }
+    if (!file) {
+        errorBox.textContent = "Error: no image selected";
+        return;
+    }
 
-    document.getElementById("status").textContent = "";
-    document.getElementById("result").textContent = "";
-    document.getElementById("loading").style.display = "none";
+    const formData = new FormData();
+    formData.append("file", file);
+
+    try {
+        const response = await fetch("http://localhost:8080/process-art", {
+            method: "POST",
+            headers: { "Authorization": "Bearer " + token },
+            body: formData
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+            errorBox.textContent = "Error: " + (data.detail || "Upload failed");
+            return;
+        }
+
+        // save request ID for polling
+        lastRequestId = data.id;
+        startPollingStatus(token);
+
+        resultTitle.style.display = "block";
+        result.innerHTML =
+            `Uploaded ✔ Interpretation will appear in Firestore.<br><br>` +
+            `Status: ${data.status}<br>` +
+            `Request ID: ${data.id}`;
+
+    } catch (err) {
+        errorBox.textContent = "Network error: " + err.message;
+    }
 }
 
 
+// ---------------------------------------
+// AUTO CHECK STATUS IN FIRESTORE
+// ---------------------------------------
+function startPollingStatus(token) {
+    if (!lastRequestId) return;
 
+    // stop previous polling if exists
+    if (pollingInterval) {
+        clearInterval(pollingInterval);
+    }
+
+    pollingInterval = setInterval(() => checkStatus(token), 2000);
+}
+
+async function checkStatus(token) {
+    if (!lastRequestId) return;
+
+    try {
+        const response = await fetch("http://localhost:8080/history", {
+            headers: { "Authorization": "Bearer " + token }
+        });
+
+        const history = await response.json();
+        const item = history.find(h => h.id === lastRequestId);
+
+        if (!item) return;
+
+        // Update status instantly
+        result.innerHTML =
+            `Uploaded ✔ Interpretation will appear in Firestore.<br><br>` +
+            `Status: ${item.status}<br>` +
+            `Request ID: ${item.id}<br><br>`;
+
+        // If completed — show meaning + objects
+        if (item.status === "completed") {
+            clearInterval(pollingInterval);
+
+            result.innerHTML += `<b>Objects:</b> ${item.objects?.join(", ") || "None"}<br><br>`;
+            result.innerHTML += `<b>Interpretation:</b><br>${item.interpretation}`;
+
+        }
+
+    } catch (err) {
+        console.log("Polling error:", err.message);
+    }
+}
+
+
+// ---------------------------------------
+// CLEAR FORM
+// ---------------------------------------
+function clearForm() {
+    document.getElementById("tokenInput").value = "";
+    fileInput.value = "";
+    fileName.textContent = "";
+    preview.style.display = "none";
+    errorBox.textContent = "";
+    result.textContent = "";
+    resultTitle.style.display = "none";
+
+    lastRequestId = null;
+    if (pollingInterval) clearInterval(pollingInterval);
+}

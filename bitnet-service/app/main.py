@@ -1,78 +1,56 @@
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI
 from pydantic import BaseModel
-from transformers import pipeline
+import random
 import logging
-import traceback
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("BitNetService")
 
-app = FastAPI(title="Text Generation Service (BitNet Proxy)")
+app = FastAPI(title="BitNet Dream Interpreter")
 
-generator = None
+class BitNetRequest(BaseModel):
+    prompt: str
 
-class TextRequest(BaseModel):
-    detected_objects: list[str]
-    style: str = "creative"
 
-@app.on_event("startup")
-def load_model():
-    global generator
-    logger.info("Loading GPT-2 model (BitNet proxy)...")
+# ---------------------------------------------------------
+#  Simple pseudo-LLM mystical generator (student-friendly🔥)
+# ---------------------------------------------------------
+TEMPLATES = [
+    "In this vision, {symbol} carries a gentle symbolic meaning. It reflects a quiet shift within your inner world.",
+    "The presence of {symbol} suggests that you are entering a period of soft transformation and inner understanding.",
+    "Symbolically, {symbol} points toward intuition awakening and clarity forming in subtle ways.",
+    "Dreams involving {symbol} often indicate that guidance is nearby — calm, patient, and quietly supportive.",
+    "This symbol, {symbol}, whispers of balance returning and new emotional harmony emerging.",
+    "The dream uses {symbol} as a sign of reflection — a reminder to trust the calm voice within.",
+]
+
+
+def extract_symbol_from_prompt(prompt: str) -> str:
+    """Extracts the YOLO object the worker placed in {brackets}."""
     try:
-        generator = pipeline(
-            "text-generation",
-            model="gpt2",
-            pad_token_id=50256  # IMPORTANT FIX
-        )
-        logger.info("LLM loaded successfully.")
-    except Exception as e:
-        logger.error(f"Failed to load model: {e}")
-        traceback.print_exc()
+        start = prompt.index("{")
+        end = prompt.index("}")
+        return prompt[start + 1:end]
+    except:
+        return "this symbol"
 
+
+def generate_mystical_text(prompt: str) -> str:
+    symbol = extract_symbol_from_prompt(prompt)
+    template = random.choice(TEMPLATES)
+    return template.format(symbol=symbol)
+
+
+# ---------------------------------------------------------
+#  API Endpoint
+# ---------------------------------------------------------
 @app.post("/generate")
-def generate_text(request: TextRequest):
-    if generator is None:
-        raise HTTPException(status_code=503, detail="Model is loading")
+def generate_text(request: BitNetRequest):
+    logger.info(f"BitNet received prompt: {request.prompt}")
 
-    # Build prompt
-    if request.detected_objects:
-        objects = ", ".join(set(request.detected_objects))
-        prompt = f"Express the emotion creatively. I saw a painting containing {objects}. It makes me feel"
-    else:
-        prompt = "Express the emotion creatively. I saw an abstract mysteries painting. It makes me feel"
+    mystical_text = generate_mystical_text(request.prompt)
 
-    logger.info(f"Prompt sent to model: {prompt}")
+    return {
+        "generated_description": mystical_text
+    }
 
-    try:
-        result = generator(
-            prompt,
-            max_length=80,
-            num_return_sequences=1,
-            temperature=0.8,
-            no_repeat_ngram_size=2,
-            repetition_penalty=1.2,
-            pad_token_id=50256
-        )
-
-        text = result[0]["generated_text"]
-
-        # Cleanup
-        if "." in text:
-            text = text.rsplit(".", 1)[0] + "."
-        text = text.strip()
-
-        return {
-            "input_objects": request.detected_objects,
-            "generated_description": text
-        }
-
-    except Exception as e:
-        logger.error("TEXT GENERATION ERROR:")
-        logger.error(str(e))
-        traceback.print_exc()
-
-        return {
-            "input_objects": request.detected_objects,
-            "generated_description": "A mysterious and evocative artwork that inspires deep emotion."
-        }

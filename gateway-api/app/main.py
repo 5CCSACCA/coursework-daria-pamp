@@ -202,8 +202,10 @@ async def process_art(
     return {
         "id": request_id,
         "status": "queued",
+        "user_id": user_id,  
         "message": "Authenticated. Your artwork is being processed asynchronously."
-    }
+}
+
 
 
 # ---------------------------
@@ -232,3 +234,86 @@ def get_history(user_id: str = Depends(get_current_user)):
             status_code=500,
             detail=f"Firestore Error: {e}"
         )
+
+
+# -------------------------------------------------------
+#  GET: Retrieve single request by ID
+# -------------------------------------------------------
+@app.get("/requests/{request_id}")
+def get_request_by_id(
+    request_id: str,
+    user_data: dict = Depends(get_current_user)
+):
+    doc_ref = db.collection("art_requests").document(request_id)
+    snapshot = doc_ref.get()
+
+    if not snapshot.exists:
+        raise HTTPException(status_code=404, detail="Request not found")
+
+    data = snapshot.to_dict()
+
+    # User can only read their own data
+    if data.get("user_id") != user_data["user_id"]:
+        raise HTTPException(status_code=403, detail="Access denied")
+
+    return data
+
+
+# -------------------------------------------------------
+#  PATCH: Update fields in a request
+# -------------------------------------------------------
+@app.patch("/requests/{request_id}")
+def update_request(
+    request_id: str,
+    updates: dict,
+    user_data: dict = Depends(get_current_user)
+):
+    doc_ref = db.collection("art_requests").document(request_id)
+    snapshot = doc_ref.get()
+
+    if not snapshot.exists:
+        raise HTTPException(status_code=404, detail="Request not found")
+
+    data = snapshot.to_dict()
+
+    # Only owner can update
+    if data.get("user_id") != user_data["user_id"]:
+        raise HTTPException(status_code=403, detail="Access denied")
+
+    # Allowed updates: user_notes, favorite, custom_tag
+    allowed = {"user_notes", "favorite", "custom_tag"}
+    clean_updates = {k: v for k, v in updates.items() if k in allowed}
+
+    if not clean_updates:
+        raise HTTPException(
+            status_code=400,
+            detail="No valid fields to update. Allowed: user_notes, favorite, custom_tag"
+        )
+
+    doc_ref.update(clean_updates)
+    return {"status": "updated", "updated_fields": clean_updates}
+
+
+# -------------------------------------------------------
+#  DELETE: Remove a request
+# -------------------------------------------------------
+@app.delete("/requests/{request_id}")
+def delete_request(
+    request_id: str,
+    user_data: dict = Depends(get_current_user)
+):
+    doc_ref = db.collection("art_requests").document(request_id)
+    snapshot = doc_ref.get()
+
+    if not snapshot.exists:
+        raise HTTPException(status_code=404, detail="Request not found")
+
+    data = snapshot.to_dict()
+
+    # Only owner can delete
+    if data.get("user_id") != user_data["user_id"]:
+        raise HTTPException(status_code=403, detail="Access denied")
+
+    doc_ref.delete()
+    return {"status": "deleted", "id": request_id}
+

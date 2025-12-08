@@ -56,8 +56,10 @@ async function uploadImage() {
         }
 
         resultTitle.style.display = "block";
-        result.textContent = "Uploaded ✔ Interpretation will appear in Firestore.";
-
+        result.innerHTML =
+            `Uploaded ✔ Interpretation will appear in Firestore.<br><br>` +
+            `Status: ${data.status}<br>` +
+            `User ID: ${data.user_id}`;
     } catch (err) {
         errorBox.textContent = "Network error: " + err.message;
     }

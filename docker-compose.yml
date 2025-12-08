@@ -2,9 +2,6 @@ version: '3.8'
 
 services:
 
-  # ------------------------------------------------------
-  # 1. RabbitMQ (Message Broker)
-  # ------------------------------------------------------
   rabbitmq:
     image: "rabbitmq:3-management"
     container_name: rabbitmq
@@ -23,9 +20,7 @@ services:
     networks:
       - app-network
 
-  # ------------------------------------------------------
-  # 2. Gateway API (Entrypoint)
-  # ------------------------------------------------------
+
   gateway-api:
    build: ./gateway-api
    restart: always
@@ -47,9 +42,6 @@ services:
      - app-network
 
 
-  # ------------------------------------------------------
-  # 3. Worker Service (Consumes queue)
-  # ------------------------------------------------------
   worker-service:
    build: ./worker-service
    restart: always
@@ -69,9 +61,6 @@ services:
      - app-network
 
 
-  # ------------------------------------------------------
-  # 4. YOLO Object Detection Service
-  # ------------------------------------------------------
   yolo-service:
    build: ./yolo-service
    restart: always
@@ -88,9 +77,6 @@ services:
      - app-network
 
 
-  # ------------------------------------------------------
-  # 5. BitNet (GPT-2) LLM Generator
-  # ------------------------------------------------------
   bitnet-service:
    build: ./bitnet-service
    restart: always
@@ -102,7 +88,6 @@ services:
      - app-network
 
 
-
   frontend:
    build: ./frontend
    ports:
@@ -110,11 +95,6 @@ services:
    restart: always
 
 
-
-
-# ------------------------------------------------------
-# Shared Network
-# ------------------------------------------------------
 networks:
   app-network:
     driver: bridge

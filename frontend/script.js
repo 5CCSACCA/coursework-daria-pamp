@@ -5,12 +5,10 @@ const result = document.getElementById("result");
 const resultTitle = document.getElementById("resultTitle");
 const errorBox = document.getElementById("error");
 
-let lastRequestId = null;   // <— запоминаем ID заявки
-let pollingInterval = null; // <— таймер авто-обновления
+let lastRequestId = null;   //ID
+let pollingInterval = null; //timer
 
-// ---------------------------------------
 // IMAGE PREVIEW
-// ---------------------------------------
 fileInput.addEventListener("change", () => {
     const file = fileInput.files[0];
     if (!file) return;
@@ -26,9 +24,7 @@ fileInput.addEventListener("change", () => {
 });
 
 
-// ---------------------------------------
 // UPLOAD IMAGE
-// ---------------------------------------
 async function uploadImage() {
     errorBox.textContent = "";
     resultTitle.style.display = "none";
@@ -79,9 +75,7 @@ async function uploadImage() {
 }
 
 
-// ---------------------------------------
 // AUTO CHECK STATUS IN FIRESTORE
-// ---------------------------------------
 function startPollingStatus(token) {
     if (!lastRequestId) return;
 
@@ -127,9 +121,7 @@ async function checkStatus(token) {
 }
 
 
-// ---------------------------------------
 // CLEAR FORM
-// ---------------------------------------
 function clearForm() {
     document.getElementById("tokenInput").value = "";
     fileInput.value = "";

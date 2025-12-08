@@ -9,9 +9,7 @@ import sys
 import os
 
 
-# ---------------------------
 # Firebase Initialization
-# ---------------------------
 if not firebase_admin._apps:
     cred = credentials.Certificate("serviceAccountKey.json")
     firebase_admin.initialize_app(cred)
@@ -23,9 +21,7 @@ YOLO_URL = "http://yolo-service:8000/detect"
 BITNET_URL = "http://bitnet-service:8001/generate"
 
 
-# ---------------------------
-# Utility: safe POST with retries
-# ---------------------------
+#safe POST with retries
 def safe_post(url, **kwargs):
     """
     Makes a POST request with retries.
@@ -42,9 +38,7 @@ def safe_post(url, **kwargs):
             time.sleep(2)
 
 
-# ---------------------------
 # Task Processing Logic
-# ---------------------------
 def process_task(ch, method, properties, body):
     print("\n==============================")
     print(" [x] Received new task")
@@ -58,9 +52,7 @@ def process_task(ch, method, properties, body):
 
         print(f"Processing file: {filename}  | Request ID: {request_id}")
 
-        # ---------------------------
-        # 1. YOLO DETECTION
-        # ---------------------------
+        #YOLO DETECTION
         files = {"file": (filename, image_bytes)}
 
         try:
@@ -75,9 +67,7 @@ def process_task(ch, method, properties, body):
 
         print(f" -> YOLO found objects: {detections}")
 
-        # ---------------------------
-        # 2. BITNET GENERATION
-        # ---------------------------
+        #BITNET GENERATION
         try:
             prompt_text = (
                 f"You are The Dream Interpreter — a gentle oracle who explains symbolic visions. "
@@ -102,9 +92,7 @@ def process_task(ch, method, properties, body):
 
         print(f" -> BitNet generated: {description[:80]}...")
 
-        # ---------------------------
-        # 3. UPDATE FIRESTORE
-        # ---------------------------
+        #UPDATE FIRESTORE
         try:
             db.collection("art_requests").document(request_id).update({
                 "status": "completed",
@@ -130,9 +118,7 @@ def process_task(ch, method, properties, body):
     ch.basic_ack(delivery_tag=method.delivery_tag)
 
 
-# ---------------------------
 # Worker → RabbitMQ Connection
-# ---------------------------
 def main():
     print("Worker starting...")
 
@@ -164,4 +150,3 @@ if __name__ == "__main__":
     except KeyboardInterrupt:
         print("Worker stopped manually")
         sys.exit(0)
-

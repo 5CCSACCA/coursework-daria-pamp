@@ -12,9 +12,6 @@ class BitNetRequest(BaseModel):
     prompt: str
 
 
-# ---------------------------------------------------------
-#  Simple pseudo-LLM mystical generator (student-friendly🔥)
-# ---------------------------------------------------------
 TEMPLATES = [
     "In this vision, {symbol} carries a gentle symbolic meaning. It reflects a quiet shift within your inner world.",
     "The presence of {symbol} suggests that you are entering a period of soft transformation and inner understanding.",
@@ -41,9 +38,7 @@ def generate_mystical_text(prompt: str) -> str:
     return template.format(symbol=symbol)
 
 
-# ---------------------------------------------------------
 #  API Endpoint
-# ---------------------------------------------------------
 @app.post("/generate")
 def generate_text(request: BitNetRequest):
     logger.info(f"BitNet received prompt: {request.prompt}")
@@ -53,4 +48,3 @@ def generate_text(request: BitNetRequest):
     return {
         "generated_description": mystical_text
     }
-

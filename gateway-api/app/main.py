@@ -2,10 +2,8 @@ from fastapi import FastAPI, UploadFile, File, Depends, HTTPException, status
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from fastapi.middleware.cors import CORSMiddleware
 from prometheus_fastapi_instrumentator import Instrumentator
-
 import firebase_admin
 from firebase_admin import credentials, firestore, auth
-
 import pika
 import json
 import base64
@@ -13,25 +11,17 @@ import os
 import time
 
 
-# ---------------------------
 # Firebase Initialization
-# ---------------------------
 if not firebase_admin._apps:
     cred = credentials.Certificate("serviceAccountKey.json")
     firebase_admin.initialize_app(cred)
 
 db = firestore.client()
 
-
-# ---------------------------
-# FastAPI App
-# ---------------------------
 app = FastAPI(title="ArtiFy Async Gateway (Secured)")
 
 
-# ---------------------------
-# CORS (Stage 11)
-# ---------------------------
+# CORS (Stage 11)-
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],        # For coursework demo: open CORS
@@ -41,15 +31,11 @@ app.add_middleware(
 )
 
 
-# ---------------------------
 # Monitoring (Stage 9)
-# ---------------------------
 Instrumentator().instrument(app).expose(app)
 
 
-# ---------------------------
 # Authentication (Stage 7)
-# ---------------------------
 security = HTTPBearer()
 
 def get_current_user(creds: HTTPAuthorizationCredentials = Depends(security)):
@@ -68,9 +54,7 @@ def get_current_user(creds: HTTPAuthorizationCredentials = Depends(security)):
         )
 
 
-# ---------------------------
 # Utility: Secure RabbitMQ Connection
-# ---------------------------
 def safe_rabbitmq_connection(max_retries: int = 5):
     """
     Attempts to connect to RabbitMQ with retry logic.
@@ -90,17 +74,13 @@ def safe_rabbitmq_connection(max_retries: int = 5):
             time.sleep(2)
 
 
-# ---------------------------
 # HEALTH ENDPOINT (Stage 9)
-# ---------------------------
 @app.get("/health")
 def health():
     return {"status": "ok"}
 
 
-# ---------------------------
 # PROCESS ART ENDPOINT (Stage 6)
-# ---------------------------
 @app.post("/process-art")
 async def process_art(
     file: UploadFile = File(...),
@@ -113,10 +93,7 @@ async def process_art(
     """
     print(f"User {user_id} requested processing.")
 
-
-    # ----------------------------------------
     # SECURITY CHECK 1: Limit file size (Stage 11)
-    # ----------------------------------------
     file.file.seek(0, os.SEEK_END)
     file_size = file.file.tell()
     file.file.seek(0)
@@ -128,9 +105,7 @@ async def process_art(
         )
 
 
-    # ----------------------------------------
     # SECURITY CHECK 2: Ensure file is image
-    # ----------------------------------------
     if not file.content_type.startswith("image/"):
         raise HTTPException(
             status_code=400,
@@ -138,9 +113,7 @@ async def process_art(
         )
 
 
-    # ----------------------------------------
     # STAGE 4/5: Create Firestore Request Entry
-    # ----------------------------------------
     doc_ref = db.collection("art_requests").document()
 
     try:
@@ -159,9 +132,7 @@ async def process_art(
     request_id = doc_ref.id
 
 
-    # ----------------------------------------
     # ENCODE IMAGE (base64)
-    # ----------------------------------------
     file_bytes = await file.read()
     image_b64 = base64.b64encode(file_bytes).decode("utf-8")
 
@@ -172,9 +143,7 @@ async def process_art(
     }
 
 
-    # ----------------------------------------
     # SEND TO RABBITMQ (Stage 6)
-    # ----------------------------------------
     try:
         connection = safe_rabbitmq_connection()
         channel = connection.channel()
@@ -196,9 +165,7 @@ async def process_art(
         )
 
 
-    # ----------------------------------------
     # ASYNC RESPONSE
-    # ----------------------------------------
     return {
         "id": request_id,
         "status": "queued",
@@ -208,9 +175,7 @@ async def process_art(
 
 
 
-# ---------------------------
 # GET HISTORY (Stage 4/5)
-# ---------------------------
 @app.get("/history")
 def get_history(user_id: str = Depends(get_current_user)):
     """
@@ -236,9 +201,7 @@ def get_history(user_id: str = Depends(get_current_user)):
         )
 
 
-# -------------------------------------------------------
 #  GET: Retrieve single request by ID
-# -------------------------------------------------------
 @app.get("/requests/{request_id}")
 def get_request_by_id(
     request_id: str,
@@ -259,9 +222,7 @@ def get_request_by_id(
     return data
 
 
-# -------------------------------------------------------
 #  PATCH: Update fields in a request
-# -------------------------------------------------------
 @app.patch("/requests/{request_id}")
 def update_request(
     request_id: str,
@@ -294,9 +255,7 @@ def update_request(
     return {"status": "updated", "updated_fields": clean_updates}
 
 
-# -------------------------------------------------------
 #  DELETE: Remove a request
-# -------------------------------------------------------
 @app.delete("/requests/{request_id}")
 def delete_request(
     request_id: str,
@@ -316,4 +275,3 @@ def delete_request(
 
     doc_ref.delete()
     return {"status": "deleted", "id": request_id}
-

@@ -10,41 +10,38 @@
 
 <div class="container">
 
-    <!-- LOGO -->
+    <!-- LOGO (visible now) -->
     <div class="logo">
-        <!-- simple student-style crescent moon -->
-        <svg width="50" height="50" viewBox="0 0 100 100">
-            <circle cx="50" cy="50" r="40" fill="#222"/>
+        <svg width="60" height="60" viewBox="0 0 100 100">
+            <circle cx="50" cy="50" r="40" fill="#1c1c1c"/>
             <path d="M60 10 A40 40 0 1 0 60 90 A25 25 0 1 1 60 10" fill="#f2d98a"/>
         </svg>
     </div>
 
     <h1>DeepSymbol</h1>
 
-    <!-- SUBTITLE (already requested by you) -->
     <p class="subtitle">
         AI oracle that interprets everyday objects as psychological signs and symbols.
     </p>
 
-    <!-- FORM -->
     <label>Firebase ID Token</label>
-    <textarea id="tokenInput" placeholder="Paste your Firebase ID token here"></textarea>
+    <textarea id="tokenInput"></textarea>
 
     <label>Choose Image</label>
-    <input type="file" id="imageInput">
+    <input type="file" id="fileInput">
 
-    <p id="selectedFile"></p>
+    <p id="fileName"></p>
     <img id="preview" style="display:none;" />
 
     <div class="button-row">
-        <button onclick="uploadImage()">Upload</button>
+        <button onclick="uploadImage()" id="uploadBtn">Upload</button>
         <button class="clear-btn" onclick="clearForm()">Clear</button>
     </div>
 
     <p id="error" class="error"></p>
 
-    <h3 id="resultTitle" style="display:none; margin-top:15px;">Result</h3>
-    <p id="result" class="result"></p>
+    <h3 id="resultTitle" style="display:none;">Result</h3>
+    <p id="result"></p>
 
 </div>
 

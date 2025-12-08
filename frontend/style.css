@@ -40,9 +40,14 @@ input[type="file"] {
     margin-top: 10px;
 }
 
-button {
+.buttons {
     margin-top: 15px;
-    width: 100%;
+    display: flex;
+    gap: 10px;
+}
+
+button {
+    flex: 1;
     padding: 10px;
     background: #3a7afe;
     color: white;
@@ -62,9 +67,23 @@ button:hover {
     color: #444;
 }
 
+.status.success {
+    color: #2e7d32;
+}
+
+.status.error {
+    color: #c62828;
+}
+
 .result {
     margin-top: 10px;
     color: #333;
+}
+
+.file-name {
+    margin-top: 5px;
+    font-size: 13px;
+    color: #555;
 }
 
 .preview {
@@ -72,16 +91,12 @@ button:hover {
     margin-top: 10px;
     display: none;
     border-radius: 6px;
+    border: 1px solid #ddd;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
 }
 
 .loading {
     display: none;
     color: #555;
     margin-top: 10px;
-}
-
-.buttons {
-    margin-top: 10px;
-    display: flex;
-    gap: 10px;
 }

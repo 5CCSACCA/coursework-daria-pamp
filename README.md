@@ -1,6 +1,6 @@
 # 5CCSACCA Coursework: ArtI - AI Art Interpreter
 
-Repository URL: [https://github.com/5CCSACCA/coursework-daria-pamp.git]
+Repository URL: [https://github.com/5CCSACCA/coursework-daria-pamp]
 
 ## 1. Project Purpose (System Overview)
 

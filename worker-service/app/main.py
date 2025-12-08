@@ -80,7 +80,7 @@ def process_task(ch, method, properties, body):
         # ---------------------------
         try:
             prompt_text = (
-                "You are The Dream Interpreter — an oracle who explains visions using symbolic meaning. "
+                "You are The Dream Interpreter — an oracle who explains visions." using symbolic meaning. "
                 f"The following symbols appeared in a dream: {detections}. "
                 "Write a short poetic interpretation (2–4 sentences). "
                 "Keep it calm, meaningful, and mystical. "

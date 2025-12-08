@@ -73,17 +73,20 @@ services:
   # 4. YOLO Object Detection Service
   # ------------------------------------------------------
   yolo-service:
-    build: ./yolo-service
-    restart: always
-    volumes:
-      - ./yolo-service/app:/app/app
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-    networks:
-      - app-network
+   build: ./yolo-service
+   restart: always
+   volumes:
+     - ./yolo-service/app:/app/app
+   ports:
+     - "8000:8000"
+   healthcheck:
+     test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+     interval: 10s
+     timeout: 5s
+     retries: 5
+   networks:
+     - app-network
+
 
   # ------------------------------------------------------
   # 5. BitNet (GPT-2) LLM Generator

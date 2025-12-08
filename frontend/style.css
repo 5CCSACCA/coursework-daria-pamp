@@ -1,0 +1,64 @@
+body {
+    font-family: Arial, sans-serif;
+    background: #0b0b0b;
+    color: #fff;
+    margin: 0;
+    display: flex;
+    justify-content: center;
+    padding: 40px 0;
+}
+
+.container {
+    background: #141414;
+    padding: 30px;
+    width: 420px;
+    border-radius: 16px;
+    box-shadow: 0 0 20px rgba(240, 220, 140, 0.1);
+}
+
+.logo {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 8px;
+}
+
+h1 {
+    text-align: center;
+    margin-bottom: 6px;
+}
+
+.subtitle {
+    text-align: center;
+    color: #d9cfa8;
+    font-size: 14px;
+    margin-bottom: 20px;
+}
+
+textarea, input[type=file] {
+    width: 100%;
+    padding: 10px;
+    margin-top: 5px;
+    background: #1f1f1f;
+    border: none;
+    border-radius: 8px;
+    color: #eee;
+}
+
+textarea {
+    height: 90px;
+}
+
+button {
+    width: 48%;
+    padding: 10px;
+    border-radius: 8px;
+    border: none;
+    cursor: pointer;
+}
+
+#preview {
+    width: 100%;
+    margin-top: 15px;
+    border-radius: 10px;
+}
+

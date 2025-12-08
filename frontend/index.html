@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DeepSymbol – Upload Your Vision</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div class="container">
+
+    <div class="logo">
+    <svg width="80" height="80" viewBox="0 0 100 100">
+        <circle cx="50" cy="50" r="42" fill="#fdf3c4" opacity="0.25" />
+
+        <circle cx="50" cy="50" r="32" fill="#fcecc2" opacity="0.4" />
+
+        <path
+            d="M60 20 
+               A30 30 0 1 0 60 80 
+               A20 20 0 1 1 60 20"
+            fill="#fff3b0"
+        />
+    </svg>
+</div>
+
+    <h1>DeepSymbol</h1>
+
+    <p class="subtitle">
+        AI oracle that interprets everyday objects as psychological signs and symbols.
+    </p>
+
+    <label>Firebase ID Token</label>
+    <textarea id="tokenInput"></textarea>
+
+    <label>Choose Image</label>
+    <input type="file" id="fileInput">
+
+    <p id="fileName"></p>
+    <img id="preview" style="display:none;" />
+
+    <div class="button-row">
+        <button onclick="uploadImage()" id="uploadBtn">Upload</button>
+        <button class="clear-btn" onclick="clearForm()">Clear</button>
+    </div>
+
+    <p id="error" class="error"></p>
+
+    <h3 id="resultTitle" style="display:none;">Result</h3>
+    <p id="result"></p>
+
+</div>
+
+<script src="script.js"></script>
+</body>
+</html>
+

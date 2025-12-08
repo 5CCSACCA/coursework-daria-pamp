@@ -1,71 +1,142 @@
-# 5CCSACCA Coursework: ArtI - AI Art Interpreter
+# DeepSymbol – Cloud-AI Coursework Project
 
-Repository URL: [https://github.com/5CCSACCA/coursework-daria-pamp]
+Repository URL: [https://github.com/5CCSACCA/coursework-daria-pamp.git]
 
-## 1. Project Purpose (System Overview)
+This project is my implementation for the 5CCSACCA – Cloud Computing for Artificial Intelligence coursework.
+The goal was to design and build a complete cloud-native AI pipeline using containerised microservices, message queues, and asynchronous processing.
+My system is called DeepSymbol — an AI oracle that interprets everyday objects as psychological symbols.
+The application allows a user to upload an image, automatically detect objects (YOLOv8), generate symbolic meaning using a lightweight language model (BitNet), and store the final interpretation in Firestore.
 
-**ArtI** is a Software as a Service (SaaS) application. The primary goal of this project is to bring art to life by providing users with creative and contextual interpretations of visual art. The system functions by allowing a user to upload an image (such as a painting, sculpture, or photograph). This input triggers a two-part microservice process:
+## 1. System Architecture
 
-1.  Vision Analysis Service (YOLO): This service uses the *YOLOv8n model* from Ultralytics to perform object detection. It identifies the key components, subjects, and stylistic elements within the image ("person," "guitar," "sky," "cubism" etc).
-2.  Text Generation Service (BitNet): The data from the YOLO service is then passed to the *BitNet LLM*. This model generates a creative textual response, such as a poetic description, an emotional interpretation, or a "monologue" from the artwork's perspective.
+The solution is built using six microservices, connected through a message-driven pipeline:
+Frontend → Gateway API → RabbitMQ → Worker → YOLO Service
+                                            → BitNet Service
+                                  ↓
+                              Firestore
 
-## 2. Project Directory Structure
+Components:
+Service
+Frontend (NGINX) - Minimal web UI for uploading an image and providing a Firebase token.
+Gateway API (FastAPI) - Entry point, validates Firebase ID token, performs security checks, stores a request in Firestore, and sends the task to RabbitMQ.
+RabbitMQ - Message queue enabling asynchronous processing.
+Worker - Listens for tasks, calls YOLO + BitNet, composes final interpretation, writes back to Firestore.
+YOLO Service - Object detection using YOLOv8n.
+BitNet Service - Lightweight LLM generating symbolic interpretations.
 
-The project is architected using a microservice model to ensure scalability and separation of concerns. Each component will be an independent Docker container, orchestrated by Docker Compose.
+The system is Dockerised and orchestrated using docker-compose.
 
-├── README.md            # This documentation file
-├── docker-compose.yml   # The main orchestration file for all services
-│
-├── gateway-api/         # 1. FastAPI Gateway (The user-facing API)
-│   ├── Dockerfile       # Container definition for the gateway
-│   └── app/
-│       └── main.py      # FastAPI code (endpoints, logic)
-│
-├── yolo-service/        # 2. YOLOv8n Microservice
-│   ├── Dockerfile       # Container definition for the vision model
-│   └── app/
-│       └── main.py      # Code to load YOLO and perform detection
-│
-└── bitnet-service/      # 3. BitNet LLM Microservice
-    ├── Dockerfile       # Container definition for the language model
-    └── app/
-       └── main.py      # Code to load BitNet and generate text
+## 2. How to Run the System
+
+Prerequisites
+-Docker & docker-compose
+-Firebase project with serviceAccountKey.json
+-YOLO model downloads automatically on first run
+
+Start the full system
+```bash
+docker-compose up -d --build
+```
+This launches all 6 services and RabbitMQ.
+
+Access the UI
+```bash
+http://localhost:3000
+```
+
+## 3. Authentication (Firebase)
+The project uses Firebase Authentication to secure the Gateway API.
+The frontend requires the user to paste a Firebase ID token obtained via:
+```bash
+curl 'https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key=API_KEY' \
+  -H 'Content-Type: application/json' \
+  --data '{"email":"<email>", "password":"<pw>", "returnSecureToken":true}'
+```
+The idToken from this response is used in the Authorization: Bearer <token> header.
+
+## 4. Processing Pipeline
+
+When a user uploads an image:
+1. Gateway API
+-verifies Firebase token
+-checks file size & content type
+-creates Firestore document (status: "pending")
+-sends message {id, filename, base64_image} to RabbitMQ
+
+2. Worker
+-receives the message
+-calls YOLO service → /detect
+-calls BitNet service → /generate
+-updates Firestore with: detected objects, symbolic interpretation, status "completed"
+
+3. The user sees the request ID in the frontend and can inspect Firestore for results.
+
+## 5. Performance & Monitoring
+
+The system includes:
+-Prometheus monitoring
+```bash
+Instrumentator().instrument(app).expose(app)
+```
+-Health checks for each service
+```bash
+healthcheck:
+  test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+```
+-Tests
+```bash
+tests/tests.sh
+```
+
+It performs:
+health checks
+YOLO inference test
+BitNet generation test
+Gateway pipeline test (returns 401 without token – expected)
+small load test
+
+*Note*: Internal services are not exposed publicly, so some tests intentionally return 000. This is acceptable because the services are only accessible inside the Docker network.
+
+## 6. Security Measures
+
+The system implements several required security features:
+Firebase token validation in Gateway
+Image size limit (5MB)
+MIME-type validation (image/*)
+Sanitised base64 encoding before sending to RabbitMQ
+Isolated Docker network
+Asynchronous design prevents blocking / overloading Gateway
+
+These satisfy the coursework requirements for secure design.
+
+## 7.Firestore Data Model
+```bash
+art_requests/
+   <request_id>/
+      user_id: string
+      filename: string
+      status: "pending" | "completed"
+      timestamp: server_timestamp
+      yolo_objects: [...]
+      interpretation: "..."
+```
+
+## 8.Known Limitations
+
+YOLO and BitNet are only accessible inside Docker, so direct curl tests from the host will fail (expected behaviour).
+First YOLO model download takes ~1–2 seconds.
+The frontend is intentionally simple because the focus is backend architecture.
+
+These limitations were discussed in the coursework video.
 
 
-## 3. How to Run Locally (Docker)
+# Conclusion
+The system demonstrates:
+container orchestration
+asynchronous message-driven architecture
+secure authentication
+integration of computer vision + language models
+cloud-style design patterns
+monitoring and testing
 
-The entire system is designed for simple, one-command local deployment using Docker and Docker Compose.
-
-Prerequisites:
-* Docker Desktop
-* Git (for cloning)
-
-Local Deployment Instructions:
-bash
-1. Clone this repository
-git clone [https://github.com/5CCSACCA/coursework-daria-pamp.git]
-cd coursework-daria-pamp
-
-2. Build and run all services
-This command reads the docker-compose.yml file and starts the entire system
-docker-compose up --build
-
-Once running, the FastAPI gateway and its documentation will be accessible at [http://localhost:8000/docs].
-
-## 4. Deployment Specifications
-
-As per the coursework requirements, the entire system (including all models) is designed to perform inference efficiently on hardware limited to:
-CPUs: 4 Cores
-RAM: 16GB
-
-## 5. Future Implementation Ideas (Roadmap)
-
-This README outlines the core architecture. Future development will proceed according to the phases detailed in the coursework brief, including:
-
-Database Integration: Adding Firebase Firestore to store user information and the history of generated art interpretations.
-File Storage: Using Firebase Storage to handle all user-uploaded images.
-Authentication: Implementing Firebase Auth for secure user login and registration.
-Asynchronous Processing: Integrating RabbitMQ as a message queue between the yolo-service and bitnet-service to provide non-blocking, instant API responses.
-Model Versioning: Using MLFlow to track model experiments and manage model versions.
-CI/CD Pipeline: Setting up GitHub Actions for automated testing and deployment.
-Monitoring & Security: Implementing basic monitoring and securing all API endpoints.
+DeepSymbol successfully performs symbolic interpretation of real-world images using a distributed, scalable AI pipeline.

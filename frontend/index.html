@@ -2,6 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>DeepSymbol – Upload Your Vision</title>
     <link rel="stylesheet" href="style.css">
 </head>
@@ -9,37 +10,45 @@
 
 <div class="container">
 
-    <h1>DeepSymbol – Upload Your Vision</h1>
+    <!-- LOGO -->
+    <div class="logo">
+        <!-- simple student-style crescent moon -->
+        <svg width="50" height="50" viewBox="0 0 100 100">
+            <circle cx="50" cy="50" r="40" fill="#222"/>
+            <path d="M60 10 A40 40 0 1 0 60 90 A25 25 0 1 1 60 10" fill="#f2d98a"/>
+        </svg>
+    </div>
 
-    <!-- NEW SUBTITLE -->
-    <p style="text-align:center; margin-top:-10px; margin-bottom:20px; color:#ccc; font-size:14px;">
+    <h1>DeepSymbol</h1>
+
+    <!-- SUBTITLE (already requested by you) -->
+    <p class="subtitle">
         AI oracle that interprets everyday objects as psychological signs and symbols.
     </p>
 
-    <label class="label">Firebase ID Token</label>
+    <!-- FORM -->
+    <label>Firebase ID Token</label>
     <textarea id="tokenInput" placeholder="Paste your Firebase ID token here"></textarea>
 
-    <label class="label">Choose image</label>
-    <input type="file" id="fileInput" accept="image/*">
+    <label>Choose Image</label>
+    <input type="file" id="imageInput">
 
-    <div id="fileName" class="file-name"></div>
+    <p id="selectedFile"></p>
+    <img id="preview" style="display:none;" />
 
-    <img id="preview" class="preview">
-
-    <div class="buttons">
-        <button type="button" onclick="uploadImage()">Upload</button>
-        <button type="button" onclick="clearForm()">Clear</button>
+    <div class="button-row">
+        <button onclick="uploadImage()">Upload</button>
+        <button class="clear-btn" onclick="clearForm()">Clear</button>
     </div>
 
+    <p id="error" class="error"></p>
+
     <h3 id="resultTitle" style="display:none; margin-top:15px;">Result</h3>
-
-    <div id="status" class="status"></div>
-    <div id="result" class="result"></div>
-
-    <div id="loading" class="loading">Uploading…</div>
+    <p id="result" class="result"></p>
 
 </div>
 
 <script src="script.js"></script>
 </body>
 </html>
+

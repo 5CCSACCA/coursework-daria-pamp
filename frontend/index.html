@@ -10,13 +10,23 @@
 
 <div class="container">
 
-    <!-- LOGO (visible now) -->
     <div class="logo">
-        <svg width="60" height="60" viewBox="0 0 100 100">
-            <circle cx="50" cy="50" r="40" fill="#1c1c1c"/>
-            <path d="M60 10 A40 40 0 1 0 60 90 A25 25 0 1 1 60 10" fill="#f2d98a"/>
-        </svg>
-    </div>
+    <svg width="80" height="80" viewBox="0 0 100 100">
+        <!-- Outer soft glow -->
+        <circle cx="50" cy="50" r="42" fill="#fdf3c4" opacity="0.25" />
+
+        <!-- Inner crescent glow -->
+        <circle cx="50" cy="50" r="32" fill="#fcecc2" opacity="0.4" />
+
+        <!-- Crescent -->
+        <path
+            d="M60 20 
+               A30 30 0 1 0 60 80 
+               A20 20 0 1 1 60 20"
+            fill="#fff3b0"
+        />
+    </svg>
+</div>
 
     <h1>DeepSymbol</h1>
 

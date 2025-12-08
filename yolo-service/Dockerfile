@@ -1,7 +1,6 @@
 
 FROM python:3.10-slim
 
-# ---- System deps ----
 RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential \
     libgl1 \
@@ -10,7 +9,6 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 WORKDIR /app
 
-# ---- Python deps ----
 RUN pip install --no-cache-dir \
     fastapi \
     uvicorn[standard] \
@@ -21,7 +19,6 @@ RUN pip install --no-cache-dir \
 # Install CPU-only PyTorch separately
 RUN pip install --no-cache-dir torch --index-url https://download.pytorch.org/whl/cpu
 
-# ---- Copy service code ----
 COPY app /app/app
 
 ENV PYTHONUNBUFFERED=1

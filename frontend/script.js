@@ -1,56 +1,63 @@
 async function uploadImage() {
-    const file = document.getElementById("fileInput").files[0];
-    if (!file) {
-        alert("Please select an image first.");
+    const fileInput = document.getElementById("fileInput");
+    const tokenInput = document.getElementById("tokenInput");
+    const statusEl = document.getElementById("status");
+    const resultEl = document.getElementById("result");
+
+    statusEl.textContent = "";
+    resultEl.textContent = "";
+
+    // 1) Проверка файла
+    if (!fileInput.files || fileInput.files.length === 0) {
+        alert("Please choose an image file first.");
         return;
     }
 
-    document.getElementById("status").innerText = "Uploading...";
-    document.getElementById("result").innerText = "";
+    // 2) Проверка токена
+    const token = tokenInput.value.trim();
+    if (!token) {
+        alert("Please paste your Firebase ID token.");
+        return;
+    }
 
-    // 1️⃣ Firebase — get ID token
-    const user = await firebase.auth().signInWithEmailAndPassword(
-        "testuser@gmail.com",
-        "123456"
-    );
-    const idToken = await user.user.getIdToken();
+    const file = fileInput.files[0];
 
-    // 2️⃣ Prepare multipart data
     const formData = new FormData();
     formData.append("file", file);
 
-    // 3️⃣ Send request to API Gateway
-    const response = await fetch("http://localhost:8080/process-art", {
-        method: "POST",
-        headers: {
-            "Authorization": "Bearer " + idToken
-        },
-        body: formData
-    });
+    statusEl.textContent = "Uploading image to ArtiFy...";
+    try {
+        const response = await fetch("http://localhost:8080/process-art", {
+            method: "POST",
+            headers: {
+                "Authorization": "Bearer " + token
+                // НЕ указываем Content-Type вручную, FormData сделает это сама
+            },
+            body: formData
+        });
 
-    const json = await response.json();
-
-    document.getElementById("status").innerText =
-        "Image uploaded. Processing...";
-
-    pollResult(json.id); // start polling
-}
-
-async function pollResult(id) {
-    document.getElementById("status").innerText =
-        "Waiting for processing...";
-
-    const interval = setInterval(async () => {
-        const res = await fetch(`http://localhost:8080/result/${id}`);
-        const data = await res.json();
-
-        if (data.status === "completed") {
-            clearInterval(interval);
-
-            document.getElementById("status").innerText = "Done!";
-            document.getElementById("result").innerText =
-                "Objects: " + data.objects.join(", ") +
-                "\n\nInterpretation:\n" + data.interpretation;
+        let data;
+        try {
+            data = await response.json();
+        } catch (e) {
+            data = null;
         }
-    }, 2000);
+
+        if (!response.ok) {
+            statusEl.textContent = "Error: " + (data?.detail || response.statusText);
+            console.error("Response error:", data);
+            return;
+        }
+
+        // У нас API возвращает: { id, status, message }
+        statusEl.textContent = `Status: ${data.status}. Request ID: ${data.id}`;
+        if (data.message) {
+            resultEl.textContent = data.message;
+        } else {
+            resultEl.textContent = "Your artwork is queued. Check Firestore for the final interpretation.";
+        }
+    } catch (err) {
+        console.error(err);
+        statusEl.textContent = "Network error: " + err.message;
+    }
 }

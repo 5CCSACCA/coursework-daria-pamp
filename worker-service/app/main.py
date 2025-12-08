@@ -91,7 +91,7 @@ def process_task(ch, method, properties, body):
             bitnet_resp = safe_post(
                 BITNET_URL,
                 json={
-                    "prompt": prompt_text
+                    "detected_objects": [prompt_text]
                 }
             )
 

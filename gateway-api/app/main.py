@@ -202,7 +202,10 @@ async def process_art(
     return {
         "id": request_id,
         "status": "queued",
+        "user_id": user_id,  
         "message": "Authenticated. Your artwork is being processed asynchronously."
+}
+
     }
 
 
@@ -232,3 +235,4 @@ def get_history(user_id: str = Depends(get_current_user)):
             status_code=500,
             detail=f"Firestore Error: {e}"
         )
+

@@ -60,9 +60,10 @@ def process_task(ch, method, properties, body):
         try:
             symbol = detections[0] if detections else "unknown"
             prompt = (
-                f"You are The Dream Interpreter. The symbol is: {symbol}. "
+                f"You are The Dream Interpreter. The symbol is: {{{symbol}}}. "
                 "Give a poetic mystical interpretation in 2–3 sentences."
             )
+
 
             bit_resp = safe_post(BITNET_URL, json={"prompt": prompt})
             interpretation = bit_resp.json().get("generated_description", "") \

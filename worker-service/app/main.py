@@ -2,15 +2,14 @@ import pika
 import json
 import requests
 import firebase_admin
-from firebase_admin import credentials, firestore
+from firebase_admin import firestore
 import base64
 import time
 import sys
 
 # Firebase initialization
 if not firebase_admin._apps:
-    cred = credentials.Certificate("serviceAccountKey.json")
-    firebase_admin.initialize_app(cred)
+    firebase_admin.initialize_app()
 
 db = firestore.client()
 

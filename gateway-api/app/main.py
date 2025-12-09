@@ -2,7 +2,7 @@ import uvicorn
 from fastapi import FastAPI, File, UploadFile, Header, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 import firebase_admin
-from firebase_admin import credentials, firestore
+from firebase_admin import firestore, auth
 import pika
 import base64
 import uuid
@@ -20,9 +20,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Firebase init
-cred = credentials.Certificate("/app/serviceAccountKey.json")
-firebase_admin.initialize_app(cred)
+firebase_admin.initialize_app()
 db = firestore.client()
 
 # RabbitMQ connection

@@ -1,0 +1,12 @@
+fastapi
+uvicorn[standart]
+requests
+firebase-admin
+pika
+prometheus-fastapi-instrumentator
+python-multipart
+torch
+transformers
+ultralytics
+pillow
+sqlalchemy

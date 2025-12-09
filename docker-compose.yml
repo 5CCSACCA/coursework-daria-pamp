@@ -47,7 +47,7 @@ services:
    restart: always
    volumes:
      - ./worker-service/app:/app/app
-     - ./gateway-api/serviceAccountKey.json:/app/serviceAccountKey.json
+     - ./owrker-service/serviceAccountKey.json:/app/serviceAccountKey.json
    depends_on:
      - rabbitmq
      - yolo-service

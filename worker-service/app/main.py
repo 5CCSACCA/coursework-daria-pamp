@@ -107,7 +107,7 @@ def process_task(ch, method, properties, body):
     except Exception as e:
         print(f"[FATAL ERROR] {e}")
         try:
-            db.collection("art_requests").document(request_id).update({
+            db.collection("requests").document(request_id).update({
                 "status": "failed",
                 "error": str(e)
             })

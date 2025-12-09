@@ -94,7 +94,7 @@ def process_task(ch, method, properties, body):
 
         #UPDATE FIRESTORE
         try:
-            db.collection("art_requests").document(request_id).update({
+            db.collection("requests").document(request_id).update({
                 "status": "completed",
                 "objects": detections,
                 "interpretation": description,

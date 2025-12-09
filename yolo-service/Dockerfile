@@ -1,27 +1,21 @@
-
 FROM python:3.10-slim
 
+# Install required system libs
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    build-essential \
-    libgl1 \
-    libglib2.0-0 \
-    && rm -rf /var/lib/apt/lists/*
+    libgl1 libglib2.0-0 curl && \
+    apt-get clean && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
 
-RUN pip install --no-cache-dir \
-    fastapi \
-    uvicorn[standard] \
-    pillow \
-    ultralytics \
-    python-multipart
+COPY requirements.txt .
 
-# Install CPU-only PyTorch separately
-RUN pip install --no-cache-dir torch --index-url https://download.pytorch.org/whl/cpu
+# Install ONLY CPU torch, much lighter
+RUN pip install --no-cache-dir torch==2.1.0+cpu torchvision==0.16.0+cpu \
+    -f https://download.pytorch.org/whl/cpu/torch_stable.html
 
-COPY app /app/app
+RUN pip install --no-cache-dir -r requirements.txt
 
-ENV PYTHONUNBUFFERED=1
+COPY app ./app
 
 EXPOSE 8000
 

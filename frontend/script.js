@@ -1,3 +1,15 @@
+const firebaseConfig = {
+  apiKey: "AIzaSyCtZxDlIL2QfpU5X4Ib_7QfaBK4bTlKvls",
+  authDomain: "arti-1b395.firebaseapp.com",
+  projectId: "arti-1b395",
+  storageBucket: "arti-1b395.firebasestorage.app",
+  messagingSenderId: "820964903806",
+  appId: "1:820964903806:web:231f55b979ee4a47d8812f"
+};
+
+firebase.initializeApp(firebaseConfig);
+const auth = firebase.auth();
+
 const fileInput = document.getElementById("fileInput");
 const preview = document.getElementById("preview");
 const fileName = document.getElementById("fileName");

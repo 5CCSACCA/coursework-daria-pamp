@@ -19,7 +19,7 @@ You can obtain a Firebase ID token with:
 curl -X POST \
   -H "Content-Type: application/json" \
   -d '{"email":"test@gmail.com","password":"123456","returnSecureToken":true}' \
-  "https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key=YOUR_API_KEY"
+  "https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key=AIzaSyCtZxDlIL2QfpU5X4Ib_7QfaBK4bTlKvls"
 ```
 Insert the returned idToken into the UI and upload any test image.
 

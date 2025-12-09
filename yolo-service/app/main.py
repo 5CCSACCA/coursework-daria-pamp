@@ -28,6 +28,9 @@ def health():
 def home():
     return {"status": "YOLO service online", "model": "YOLOv8n"}
 
+@app.get("/health")
+def health():
+    return {"status": "ok"}
 
 # Detect Route
 @app.post("/detect")

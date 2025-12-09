@@ -99,3 +99,12 @@ def history(authorization: str = Header(None)):
         {**doc.to_dict(), "id": doc.id}
         for doc in docs
     ]
+
+@app.get("/status/{request_id}")
+def get_status(request_id: str):
+    doc = db.collection("art_requests").document(request_id).get()
+    if not doc.exists:
+        raise HTTPException(status_code=404, detail="Request not found")
+    return doc.to_dict()
+
+

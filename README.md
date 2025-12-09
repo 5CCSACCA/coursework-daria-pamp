@@ -7,6 +7,22 @@ The goal was to design and build a complete cloud-native AI pipeline using conta
 My system is called DeepSymbol — an AI oracle that interprets everyday objects as psychological symbols.
 The application allows a user to upload an image, automatically detect objects (YOLOv8), generate symbolic meaning using a lightweight language model (BitNet), and store the final interpretation in Firestore.
 
+## Test Firebase User
+
+To allow testing the system end-to-end, a test user is included:
+```bash
+email: test@gmail.com
+password: 123456
+```
+You can obtain a Firebase ID token with:
+```bash
+curl -X POST \
+  -H "Content-Type: application/json" \
+  -d '{"email":"test@gmail.com","password":"123456","returnSecureToken":true}' \
+  "https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key=YOUR_API_KEY"
+```
+Insert the returned idToken into the UI and upload any test image.
+
 ## 1. System Architecture
 
 The solution is built using six microservices, connected through a message-driven pipeline:

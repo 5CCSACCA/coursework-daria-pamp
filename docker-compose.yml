@@ -1,7 +1,22 @@
 version: '3.8'
 
 services:
-  # Service 1: Computer Vision (YOLO)
+  gateway-api:
+    build: ./gateway-api
+    container_name: gateway_container
+    ports:
+      - "8002:8002"
+    depends_on:
+      - rabbitmq
+      - database
+      - yolo-service
+      - bitnet-service
+    environment:
+      - FIREBASE_CREDENTIALS=/app/firebase/serviceAccountKey.json
+    volumes:
+      - ./gateway-api/app:/app/app
+      - ./firebase:/app/firebase
+
   yolo-service:
     build: ./yolo-service
     container_name: yolo_container
@@ -10,7 +25,6 @@ services:
     volumes:
       - ./yolo-service/app:/app/app
 
-  # Service 2: Text Generation (LLM)
   bitnet-service:
     build: ./bitnet-service
     container_name: llm_container
@@ -18,3 +32,43 @@ services:
       - "8001:8001"
     volumes:
       - ./bitnet-service/app:/app/app
+
+  worker-service:
+    build: ./worker-service
+    container_name: worker_container
+    depends_on:
+      - rabbitmq
+      - yolo-service
+      - bitnet-service
+      - gateway-api
+    volumes:
+      - ./worker-service/app:/app/app
+      - ./firebase:/app/firebase
+    environment:
+      - FIREBASE_CREDENTIALS=/app/firebase/serviceAccountKey.json
+
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: rabbitmq_container
+    ports:
+      - "5672:5672"
+      - "15672:15672"   # management UI
+    environment:
+      - RABBITMQ_DEFAULT_USER=user
+      - RABBITMQ_DEFAULT_PASS=pass
+
+  database:
+    image: postgres:15
+    container_name: postgres_container
+    restart: always
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_DB=deep_symbol
+      POSTGRES_USER=admin
+      POSTGRES_PASSWORD=admin123
+    volumes:
+      - db_data:/var/lib/postgresql/data
+
+volumes:
+  db_data:

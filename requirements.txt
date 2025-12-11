@@ -8,3 +8,6 @@ huggingface-hub
 tokenizers
 accelerate
 
+fastapi
+uvicorn
+python-multipart

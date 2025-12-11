@@ -1,0 +1,10 @@
+ultralytics
+torch
+opencv-python
+pillow
+
+transformers
+huggingface-hub
+tokenizers
+accelerate
+

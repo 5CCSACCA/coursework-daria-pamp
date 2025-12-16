@@ -14,8 +14,11 @@ services:
       dockerfile: Dockerfile
     ports:
       - "8000:8000"
+    volumes:
+      - ./secrets:/app/secrets:ro
     environment:
       - BITNET_BASE_URL=http://bitnet:8080
       - BITNET_MODEL=ggml-model-i2_s.gguf
+      - GOOGLE_APPLICATION_CREDENTIALS=/app/secrets/firebase_key.json
     depends_on:
       - bitnet

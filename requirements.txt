@@ -12,3 +12,6 @@ uvicorn
 python-multipart
 httpx
 
+firebase-admin
+
+

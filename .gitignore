@@ -12,3 +12,5 @@ yolo11n.pt
 
 # temp
 *.save
+secrets/
+*.json

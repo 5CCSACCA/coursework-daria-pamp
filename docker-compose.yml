@@ -7,3 +7,14 @@ services:
       - ./bitnet/model:/BitNet/model
     environment:
       - BITNET_MODEL=/BitNet/model/ggml-model-i2_s.gguf
+
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "8000:8000"
+    environment:
+      - BITNET_BASE_URL=http://bitnet:8080
+    depends_on:
+      - bitnet

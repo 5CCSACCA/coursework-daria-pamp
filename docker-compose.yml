@@ -1,0 +1,9 @@
+services:
+  bitnet:
+    build: ./bitnet
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./bitnet/model:/BitNet/model
+    environment:
+      - BITNET_MODEL=/BitNet/model/ggml-model-i2_s.gguf

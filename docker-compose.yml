@@ -16,5 +16,6 @@ services:
       - "8000:8000"
     environment:
       - BITNET_BASE_URL=http://bitnet:8080
+      - BITNET_MODEL=ggml-model-i2_s.gguf
     depends_on:
       - bitnet

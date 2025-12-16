@@ -1,4 +1,14 @@
-.venv/
+# Python
 __pycache__/
 *.pyc
-bitnet/model/*.gguf
+.venv/
+venv/
+
+# Local artifacts / large files
+bitnet/model/*
+!bitnet/model/.gitkeep
+data/*.db
+yolo11n.pt
+
+# temp
+*.save

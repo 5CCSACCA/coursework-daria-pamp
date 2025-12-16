@@ -3,10 +3,13 @@ from fastapi.responses import JSONResponse
 import tempfile
 import shutil
 
+from deepsymbol.db import init_db, save_interpretation, get_history
 from deepsymbol.vision import detect_objects
-from deepsymbol.llm import generate_text
+from deepsymbol.llm_bitnet import bitnet_chat_completion
 
 app = FastAPI(title="DeepSymbol API", description="YOLO + LLM symbolic interpretation")
+
+init_db()
 
 
 def build_prompt_from_objects(objects: list[str]) -> str:
@@ -38,13 +41,19 @@ async def interpret_image(file: UploadFile = File(...)):
     # 2) Build LLM prompt
     prompt = build_prompt_from_objects(objects)
 
-    # 3) LLM interpretation
-    llm_output = generate_text(prompt, max_new_tokens=200)
+    interpretation = bitnet_chat_completion(prompt)
+    
+    record_id = save_interpretation(objects, interpretation)
 
     return JSONResponse(
         {
+            "id": record_id,
             "objects": objects,
-            "interpretation": llm_output["output_text"],
+            "interpretation": interpretation,
         }
     )
+
+@app.get("/history")
+def history(limit: int = 20):
+    return {"items": get_history(limit=limit)}
 

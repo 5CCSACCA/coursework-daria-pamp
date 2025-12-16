@@ -7,35 +7,36 @@ def bitnet_chat_completion(prompt: str) -> str:
     Call BitNet service (OpenAI-compatible /v1/chat/completions) and return text.
     """
     base_url = os.getenv("BITNET_BASE_URL", "http://localhost:8080").rstrip("/")
+    model = os.getenv("BITNET_MODEL", "ggml-model-i2_s.gguf")
     url = f"{base_url}/v1/chat/completions"
 
     payload = {
-        "model": "bitnet",
+        "model": model,
         "messages": [
-            {
-            "role": "system", 
-            "content": (
-            "You interpret psychological symbols.\n"
-            "Rules:\n"
-            "- Do NOT repeat the prompt\n"
-            "- Do NOT add headings or explanations about the task\n"
-            "- Output ONLY the interpretation text\n"
-            "- Keep it concise (3–5 sentences)\n"
-            ),
-            },
-            
+            {"role": "system", "content": "You are an AI oracle that interprets psychological symbols."},
             {"role": "user", "content": prompt},
         ],
-        "temperature": 0.6,
+        "temperature": 0.7,
     }
 
-    # Some LLM calls can take time on CPU, so keep timeout generous
     with httpx.Client(timeout=None) as client:
         r = client.post(url, json=payload)
-        r.raise_for_status()
+
+    # BitNet sometimes returns JSON with {"error": ...} (sometimes even with 200),
+    # so handle it safely:
+    try:
         data = r.json()
+    except Exception:
+        raise RuntimeError(f"BitNet returned non-JSON response (status={r.status_code}): {r.text[:400]}")
 
-    # OpenAI-style response format:
-    # choices[0].message.content
+    if r.status_code >= 400:
+        # standard HTTP error
+        raise RuntimeError(f"BitNet HTTP {r.status_code}: {data}")
+
+    if "error" in data:
+        raise RuntimeError(f"BitNet error response: {data['error']}")
+
+    if "choices" not in data or not data["choices"]:
+        raise RuntimeError(f"BitNet response missing 'choices': {data}")
+
     return data["choices"][0]["message"]["content"]
-

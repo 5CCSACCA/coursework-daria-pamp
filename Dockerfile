@@ -19,7 +19,10 @@ WORKDIR /app
 COPY requirements.txt .
 
 RUN pip install --no-cache-dir --upgrade pip && \
+    pip install --no-cache-dir --index-url https://download.pytorch.org/whl/cpu torch torchvision && \
     pip install --no-cache-dir -r requirements.txt
+    
+RUN python -c "from ultralytics import YOLO; YOLO('yolo11n.pt')"
 
 # Copy project code and example data
 COPY src ./src
@@ -31,5 +34,5 @@ ENV PYTHONPATH=/app/src
 
 # Default command for Stage 2:
 # run DeepSymbol pipeline on example image
-CMD ["python", "scripts/run_deepsymbol_example.py", "data/test.jpg"]
+CMD ["uvicorn", "deepsymbol.api:app", "--host", "0.0.0.0", "--port", "8000"]
 

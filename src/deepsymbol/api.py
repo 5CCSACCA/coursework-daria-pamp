@@ -8,6 +8,7 @@ from typing import Any, Dict
 from deepsymbol.db import init_db, save_interpretation, get_history
 from deepsymbol.vision import detect_objects
 from deepsymbol.llm_bitnet import bitnet_chat_completion
+from deepsymbol.firebase_store import get_output, list_outputs, update_output, delete_output
 
 # NEW: Firebase store
 from deepsymbol.firebase_store import (

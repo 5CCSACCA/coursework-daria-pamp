@@ -20,5 +20,31 @@ services:
       - BITNET_BASE_URL=http://bitnet:8080
       - BITNET_MODEL=ggml-model-i2_s.gguf
       - GOOGLE_APPLICATION_CREDENTIALS=/app/secrets/firebase_key.json
+      - RABBITMQ_HOST=rabbitmq
+      - RABBITMQ_QUEUE=postprocess
     depends_on:
       - bitnet
+      
+  rabbitmq:
+    image: rabbitmq:3-management
+    ports: 
+      - "15672:15672"   # web UI
+      - "5672:5672"
+    environment:
+      - RABBITMQ_DEFAULT_USER=guest
+      - RABBITMQ_DEFAULT_PASS=guest
+      
+  postprocess:
+    build: .
+    command: ["python", "-m", "deepsymbol.postprocess_worker"]
+    environment:
+      - RABBITMQ_HOST=rabbitmq
+      - RABBITMQ_QUEUE=postprocess
+      - GOOGLE_APPLICATION_CREDENTIALS=/app/secrets/firebase_key.json
+    volumes:
+      - ./secrets:/app/secrets:ro
+    depends_on:
+      - rabbitmq
+  
+      
+

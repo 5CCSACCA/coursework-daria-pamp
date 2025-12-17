@@ -13,5 +13,5 @@ python-multipart
 httpx
 
 firebase-admin
-
+pika
 

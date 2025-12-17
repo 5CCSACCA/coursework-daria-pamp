@@ -9,6 +9,7 @@ from deepsymbol.db import init_db, save_interpretation, get_history
 from deepsymbol.vision import detect_objects
 from deepsymbol.llm_bitnet import bitnet_chat_completion
 from deepsymbol.firebase_store import get_output, list_outputs, update_output, delete_output
+from deepsymbol.queue import publish_postprocess_job
 
 # NEW: Firebase store
 from deepsymbol.firebase_store import (
@@ -76,6 +77,11 @@ async def interpret_image(file: UploadFile = File(...)):
             "created_at": datetime.utcnow().isoformat() + "Z",
         },
     )
+    
+    publish_postprocess_job(
+        {"id": record_id, "objects": objects, "interpretation": interpretation}
+        )
+
 
     return JSONResponse(
         {

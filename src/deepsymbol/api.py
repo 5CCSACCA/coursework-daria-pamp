@@ -1,4 +1,4 @@
-from fastapi import FastAPI, UploadFile, File, HTTPException
+from fastapi import FastAPI, UploadFile, File, HTTPException, Depends
 from fastapi.responses import JSONResponse
 import tempfile
 import shutil
@@ -10,6 +10,7 @@ from deepsymbol.vision import detect_objects
 from deepsymbol.llm_bitnet import bitnet_chat_completion
 from deepsymbol.firebase_store import get_output, list_outputs, update_output, delete_output
 from deepsymbol.queue import publish_postprocess_job
+from deepsymbol.auth import require_firebase_user
 
 # NEW: Firebase store
 from deepsymbol.firebase_store import (
@@ -45,7 +46,10 @@ def build_prompt_from_objects(objects: list[str]) -> str:
 
 
 @app.post("/interpret-image")
-async def interpret_image(file: UploadFile = File(...)):
+async def interpret_image(
+    file: UploadFile = File(...),
+    user=Depends(require_firebase_user),
+):
     # Save the uploaded file temporarily
     with tempfile.NamedTemporaryFile(delete=False, suffix=".jpg") as tmp:
         shutil.copyfileobj(file.file, tmp)
@@ -102,12 +106,12 @@ def history(limit: int = 20):
 # ----------------------------
 
 @app.get("/firebase/outputs")
-def firebase_outputs(limit: int = 50):
+def firebase_outputs(limit: int = 50, user=Depends(require_firebase_user)):
     return {"items": list_outputs(limit=limit)}
 
 
 @app.get("/firebase/outputs/{item_id}")
-def firebase_get(item_id: str):
+def firebase_get(item_id: str, user=Depends(require_firebase_user)):
     item = get_output(item_id)
     if not item:
         raise HTTPException(status_code=404, detail="Not found")
@@ -117,7 +121,7 @@ def firebase_get(item_id: str):
 
 
 @app.put("/firebase/outputs/{item_id}")
-def firebase_update(item_id: str, patch: Dict[str, Any]):
+def firebase_update(item_id: str, patch: Dict[str, Any], user=Depends(require_firebase_user)):
     # check exists (so we return 404 if missing)
     existing = get_output(item_id)
     if not existing:
@@ -131,7 +135,7 @@ def firebase_update(item_id: str, patch: Dict[str, Any]):
 
 
 @app.delete("/firebase/outputs/{item_id}")
-def firebase_delete(item_id: str):
+def firebase_delete(item_id: str, user=Depends(require_firebase_user)):
     existing = get_output(item_id)
     if not existing:
         raise HTTPException(status_code=404, detail="Not found")

@@ -15,3 +15,6 @@ httpx
 firebase-admin
 pika
 
+prometheus-client
+prometheus-fastapi-instrumentator
+

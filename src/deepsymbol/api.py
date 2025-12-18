@@ -12,6 +12,8 @@ from deepsymbol.firebase_store import get_output, list_outputs, update_output, d
 from deepsymbol.queue import publish_postprocess_job
 from deepsymbol.auth import require_firebase_user
 
+from prometheus_fastapi_instrumentator import Instrumentator
+
 # NEW: Firebase store
 from deepsymbol.firebase_store import (
     save_output,
@@ -22,6 +24,8 @@ from deepsymbol.firebase_store import (
 )
 
 app = FastAPI(title="DeepSymbol API", description="YOLO + LLM symbolic interpretation")
+
+Instrumentator().instrument(app).expose(app, endpoint="/metrics")
 
 init_db()
 
@@ -142,4 +146,8 @@ def firebase_delete(item_id: str, user=Depends(require_firebase_user)):
 
     delete_output(item_id)
     return {"status": "deleted", "id": item_id}
+
+@app.get("/health")
+def health():
+    return {"status": "ok"}
 

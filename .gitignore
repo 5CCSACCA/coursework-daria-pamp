@@ -14,3 +14,4 @@ yolo11n.pt
 *.save
 secrets/
 *.json
+certs/

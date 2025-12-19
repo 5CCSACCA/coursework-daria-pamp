@@ -7,6 +7,8 @@ services:
       - ./bitnet/model:/BitNet/model
     environment:
       - BITNET_MODEL=/BitNet/model/ggml-model-i2_s.gguf
+    cpus: "4.0"
+    mem_limit: "16g"
 
   api:
     build:

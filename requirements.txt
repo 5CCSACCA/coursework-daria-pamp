@@ -18,3 +18,6 @@ pika
 prometheus-client
 prometheus-fastapi-instrumentator
 
+pytest==8.3.4
+
+

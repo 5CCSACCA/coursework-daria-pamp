@@ -11,6 +11,7 @@ from deepsymbol.llm_bitnet import bitnet_chat_completion
 from deepsymbol.firebase_store import get_output, list_outputs, update_output, delete_output
 from deepsymbol.queue import publish_postprocess_job
 from deepsymbol.auth import require_firebase_user
+from deepsymbol.prompts import build_prompt_from_objects
 
 from prometheus_fastapi_instrumentator import Instrumentator
 
@@ -28,25 +29,6 @@ app = FastAPI(title="DeepSymbol API", description="YOLO + LLM symbolic interpret
 Instrumentator().instrument(app).expose(app, endpoint="/metrics")
 
 init_db()
-
-
-def build_prompt_from_objects(objects: list[str]) -> str:
-    if not objects:
-        return (
-        "No clear objects were detected.\n"
-    "Write ONE short paragraph (2-4 sentences).\n"
-    "Do not repeat any instruction text.\n"
-    "Do not list multiple symbols.\n"
-    "Return only the interpretation."
-        )
-
-    objects_str = ", ".join(objects)
-    return (
-        f"Detected objects: {objects_str}.\n"
-        "Interpret what these objects might symbolise psychologically (dream symbolism).\n"
-        "Answer in 2-4 short sentences.\n"
-        "Do NOT repeat the prompt. Do NOT add headings. Just the interpretation."
-    )
 
 
 @app.post("/interpret-image")

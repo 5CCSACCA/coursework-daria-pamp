@@ -1,6 +1,6 @@
 # DeepSymbol – Cloud Computing for AI Coursework (5CCSACCA)
 
-Repository: https://github.com/5CCSACCA/coursework-daria-pamp
+Repository: [https://github.com/5CCSACCA/coursework-daria-pamp](https://github.com/5CCSACCA/coursework-daria-pamp.git)
 
 DeepSymbol is a containerised AI service that detects objects in an uploaded image and returns a short “dream-style” symbolic interpretation. The system is built as a small distributed application with an API, an LLM inference service, background processing via a message queue, and full monitoring via Prometheus + Grafana.
 
